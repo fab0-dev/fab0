@@ -31,7 +31,21 @@ Install the core plugin through Claude Code's plugin system:
 /plugin install fab0@fab0
 ```
 
-In this repo, `.claude/settings.json` already declares the `fab0` marketplace (pinned to a release tag) and enables the plugin. Claude Code offers it once you trust the folder. The resolver needs [`uv`](https://docs.astral.sh/uv/) and an authenticated [`gh`](https://cli.github.com/).
+In this repo, `.claude/settings.json` already declares the `fab0` marketplace (pinned to a release tag) and enables the plugin. That declaration alone isn't enough for every client: the desktop app, for example, doesn't load a plugin that is enabled but not installed. Install it once for this repo, from the repo root:
+
+```bash
+claude plugin install fab0@fab0 --scope project
+```
+
+The command can rewrite `.claude/settings.json` in a different order; keep the committed version with `git checkout -- .claude/settings.json`. Restart open sessions afterwards, since plugins load when a session starts. `claude plugin list` should then show `fab0@fab0` with scope `project`, and headless `claude -p` runs load it too.
+
+Plugins you enabled for all your projects load here as well. To keep one out of this repo's agents' context, turn it off for this repo only; that writes the gitignored `.claude/settings.local.json`:
+
+```bash
+claude plugin disable <plugin>@<marketplace> --scope local
+```
+
+The resolver needs [`uv`](https://docs.astral.sh/uv/) and an authenticated [`gh`](https://cli.github.com/).
 
 ## Licence
 
