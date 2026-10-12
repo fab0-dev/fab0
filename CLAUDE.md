@@ -4,7 +4,10 @@ This is the home repo of the fab0 product. fab0 is built with fab0.
 
 This repo holds only what a home repo needs:
 - the README and these rules;
-- later, `.fab0/` (the wiring), `work/{run}/` (run ledgers), `.claude/settings.json` and the user documentation.
+- `.fab0/`, the wiring: the `story` recipe, with `fab0.yaml` naming this repo as home and `fab0-core` and `fab0-recipes` as code repos;
+- `specs/` and `work/{run}/`, which fab0's own runs write;
+- `.claude/settings.json`;
+- later, the user documentation.
 
 Code goes elsewhere:
 - the resolver, the schemas, and the core agents and skills go in `fab0-dev/fab0-core`;
@@ -12,6 +15,10 @@ Code goes elsewhere:
 - extension plugins go in `fab0-dev/fab0-plugins`.
 
 The checkouts are siblings under one parent directory.
+
+## Working on fab0 with fab0
+
+Changes to fab0 start as a Story issue here (fab0-dev/fab0, type Story) and run with `/fab0:run <issue>` in a trusted Claude Code session in this repo. The sibling checkouts must be in place. `/fab0:inbox` shows what is waiting. Don't hand-edit `specs/` or `work/`: they belong to runs, and runs revise them.
 
 ## Working rules
 
