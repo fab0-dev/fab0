@@ -1,0 +1,17 @@
+stage: spec
+attempt: 1
+actor: eugenefurs
+model: opus
+branch: spec/5-fab0-resolve-reports-its-version
+inputs:
+  intent: sha256:1d25682ce6a969aa600d3450a52bd9a20698e0bf2bf370f2b1ee047a2f553016
+  pr-review: sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+outputs:
+  spec: sha256:008eb51d1bf345b04750f7806a9035e5c74a11d09b0af040895d177d903e2780
+  tasks: sha256:590261b5a6245786a71235b657e579a29c94796918080f607e78d62155375baf
+verify:
+  spec: pass
+  tasks: pass
+gate:
+  type: human
+summary: 'The spec (specs/5.md) has seven scenarios. `fab0-resolve --version` prints `{"ok": true, "fab0_version": ...}`, reading the version from the plugin manifest next to the script. Every stage and gate brief carries a `Handed out by fab0 X.` header line, and its result carries a `fab0_version` field. A version that can''t be read is an error for both `--version` and `next`. The commit `/fab0:run` makes for each stage attempt names the release, so the stage PR''s commits show it. A test fails if the version in marketplace.json and the one in plugin.json differ. Ledger recording, version-match checks, PR-body changes and cutting a release are out of scope. The task list (work/5/tasks.yaml) has two core tasks: T1 does the resolver, its tests and the README (S1-S5, S7); T2, which depends on T1, changes the run skill''s commit message (S6).'

@@ -1,0 +1,15 @@
+- id: T1
+  title: fab0-resolve reports its version and names it in every brief
+  repo: core
+  files:
+    - plugins/fab0/bin/fab0-resolve
+    - tests/test_version.py
+    - README.md
+  traces_to: [S1, S2, S3, S4, S5, S7]
+- id: T2
+  title: /fab0:run names the release in each stage attempt's commit
+  repo: core
+  files:
+    - plugins/fab0/skills/run/SKILL.md
+  depends_on: [T1]
+  traces_to: [S6]
