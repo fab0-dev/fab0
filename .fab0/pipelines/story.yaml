@@ -1,0 +1,11 @@
+# from fab0-dev/fab0-recipes story--v0.1.0
+pipeline: story
+item: {issue_type: Story}
+stages:
+  - spec                 # product owner; gate: the spec PR
+  - plan                 # Task sub-issues from tasks.yaml
+  - foreach: tasks       # each task: its own sub-issue, branch and PR
+    item: {issue_type: Task}
+    stages: [implement]  # repo owner; gate: the reviewer agent
+    gate: human          # the task PR; merging it closes the task
+  - deliver              # once every task is merged
