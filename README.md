@@ -24,12 +24,14 @@ fab0 is built with fab0. This repository is the home repo of the fab0 product. I
 
 ## Installing
 
-Once the core plugin is released, install it through Claude Code's plugin system:
+Install the core plugin through Claude Code's plugin system:
 
 ```
 /plugin marketplace add fab0-dev/fab0-core
 /plugin install fab0@fab0
 ```
+
+In this repo, `.claude/settings.json` already declares the `fab0` marketplace (pinned to a release tag) and enables the plugin. Claude Code offers it once you trust the folder. The resolver needs [`uv`](https://docs.astral.sh/uv/) and an authenticated [`gh`](https://cli.github.com/).
 
 ## Licence
 
