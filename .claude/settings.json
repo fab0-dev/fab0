@@ -5,7 +5,7 @@
       "source": {
         "source": "github",
         "repo": "fab0-dev/fab0-core",
-        "ref": "fab0--v0.1.0"
+        "ref": "fab0--v0.2.0"
       }
     }
   },
