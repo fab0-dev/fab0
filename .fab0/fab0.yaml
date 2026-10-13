@@ -4,9 +4,11 @@ repos:
   home:    {path: ., github: fab0-dev/fab0, owner: product-owner}
   core:    {path: ../fab0-core, github: fab0-dev/fab0-core, owner: developer, key: CO}
   recipes: {path: ../fab0-recipes, github: fab0-dev/fab0-recipes, owner: developer, key: RC}
+  docs:    {path: ../docs, github: fab0-dev/docs, owner: docs-owner, key: DO}
 people:                                   # roles → GitHub users
   product-owner: {github: [eugenefurs]}   # writes and approves specs; merges delivery PRs
   developer:     {github: [eugenefurs]}   # implements tasks in fab0-core and fab0-recipes
+  docs-owner:    {github: [eugenefurs]}   # reviews and merges docs tasks in fab0-dev/docs
 tracker:
   kind: github-projects
   owner: fab0-dev
