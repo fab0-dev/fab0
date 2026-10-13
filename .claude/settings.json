@@ -4,9 +4,9 @@
     "fab0": {
       "source": {
         "source": "github",
-        "repo": "fab0-dev/fab0-core",
-        "ref": "fab0--v0.3.0"
-      }
+        "repo": "fab0-dev/fab0-core"
+      },
+      "autoUpdate": true
     }
   },
   "enabledPlugins": {
