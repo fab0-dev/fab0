@@ -28,7 +28,7 @@ Changes to fab0 start as a Story issue here (fab0-dev/fab0, type Story) and run 
 4. A step is done when its exit check has passed on a real run, not when its files exist.
 5. A problem found in a consuming project comes back as a generic issue in the fab0 repo that owns the concern. If it can't be written generically, it belongs to the project.
 
-`.claude/settings.json` enables the `fab0` plugin from `fab0-dev/fab0-core`, pinned to a release tag. To move to a new release, change the `ref` in a PR. The same file denies merging PRs, force pushes, pushes to `main` and edits under `.github/`: people merge, and fab0 never does.
+`.claude/settings.json` enables the `fab0` plugin from the `fab0-dev/fab0-core` marketplace, with auto-update. The marketplace points at the latest release, so a release needs no change here. The same file denies merging PRs, force pushes, pushes to `main` and edits under `.github/`: people merge, and fab0 never does.
 
 `guides/` is local seed material. It is gitignored. Never cite it in a committed file.
 
