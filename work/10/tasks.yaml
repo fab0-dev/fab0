@@ -1,0 +1,16 @@
+- id: T1
+  title: The resolver says whether a waiting stage's attempt passed its review gate
+  repo: core
+  files:
+    - plugins/fab0/bin/fab0-resolve
+    - tests/test_review_state.py
+    - README.md
+  traces_to: [S1, S3, S4, S5, S6, S7]
+- id: T2
+  title: /fab0:run opens unreviewed task pull requests as drafts and states their review
+  repo: core
+  files:
+    - plugins/fab0/skills/github/SKILL.md
+    - plugins/fab0/skills/run/SKILL.md
+  depends_on: [T1]
+  traces_to: [S1, S2, S3, S4, S5, S6, S8, S9]
