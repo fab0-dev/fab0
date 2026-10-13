@@ -9,17 +9,18 @@ fab0 runs software delivery as pipelines of Claude Code agents. Each pipeline is
 
 ## Status
 
-Pre-alpha. The resolver, the core agents and skills, and the `story` recipe exist; fab0 now runs its own changes as Stories. Expect breaking changes.
+Pre-alpha. The resolver, the core agents and skills, and the `story` recipe exist; fab0 now runs its own changes as Stories. Expect breaking changes. What comes next is in the [roadmap](ROADMAP.md); how fab0 works is in the [docs](https://github.com/fab0-dev/docs).
 
 ## Repositories
 
-fab0 is built with fab0. This repository is the home repo of the fab0 product. It holds the product's wiring, its run ledgers and its documentation. Code lives in its own repositories:
+fab0 is built with fab0. This repository is the home repo of the fab0 product. It holds the product's wiring, its run ledgers and the [roadmap](ROADMAP.md). Code and documentation live in their own repositories:
 
 | Repository | Contents |
 |---|---|
 | [`fab0-dev/fab0`](https://github.com/fab0-dev/fab0) | Home repo: this README, the rules, `.fab0/` (fab0's own wiring), and the specs and ledgers of fab0's own runs |
 | [`fab0-dev/fab0-core`](https://github.com/fab0-dev/fab0-core) | The `fab0` plugin marketplace and the core plugin: the resolver, the schemas, and the core agents and skills |
 | [`fab0-dev/fab0-recipes`](https://github.com/fab0-dev/fab0-recipes) | Ready-made `.fab0/` setups to copy into a project |
+| [`fab0-dev/docs`](https://github.com/fab0-dev/docs) | The user documentation, with its own docs pipeline |
 | `fab0-dev/fab0-plugins` | Optional extension plugins (planned) |
 
 ## Installing

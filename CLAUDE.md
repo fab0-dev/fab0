@@ -7,12 +7,13 @@ This repo holds only what a home repo needs:
 - `.fab0/`, the wiring: the `story` recipe, with `fab0.yaml` naming this repo as home and `fab0-core` and `fab0-recipes` as code repos;
 - `specs/` and `work/{run}/`, which fab0's own runs write;
 - `.claude/settings.json`;
-- later, the user documentation.
+- `ROADMAP.md`: the steps that build fab0 and their exit checks.
 
 Code goes elsewhere:
 - the resolver, the schemas, and the core agents and skills go in `fab0-dev/fab0-core`;
 - recipes go in `fab0-dev/fab0-recipes`;
-- extension plugins go in `fab0-dev/fab0-plugins`.
+- extension plugins go in `fab0-dev/fab0-plugins`;
+- the user documentation goes in `fab0-dev/docs`, which runs its own docs pipeline.
 
 The checkouts are siblings under one parent directory.
 
@@ -22,7 +23,7 @@ Changes to fab0 start as a Story issue here (fab0-dev/fab0, type Story) and run 
 
 ## Working rules
 
-1. One step is one PR. If a step changes the design, the PR description says so.
+1. One step is one PR. If a step changes the design, the PR description says so. A Story that changes behaviour or the design includes a task in the `docs` repo, so the docs change with the code.
 2. The predecessor project is read, never copied. Everything carried over is rewritten in fab0's terms. No noun from the predecessor or from a consuming project may reach a public repo, its issues or its commits.
 3. A part is ported only when a step needs it.
 4. A step is done when its exit check has passed on a real run, not when its files exist.
@@ -30,7 +31,7 @@ Changes to fab0 start as a Story issue here (fab0-dev/fab0, type Story) and run 
 
 `.claude/settings.json` enables the `fab0` plugin from the `fab0-dev/fab0-core` marketplace, with auto-update. The marketplace points at the latest release, so a release needs no change here. The same file denies merging PRs, force pushes, pushes to `main` and edits under `.github/`: people merge, and fab0 never does.
 
-`guides/` is local seed material. It is gitignored. Never cite it in a committed file.
+`guides/` is local seed material, superseded by `fab0-dev/docs` and `ROADMAP.md`. It is gitignored. Never cite it in a committed file.
 
 ## Principles
 
