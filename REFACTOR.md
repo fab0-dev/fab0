@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R0 in review. Next step: **R1**.
+**Status:** R0 done; R1 in review (fab0-dev/fab0-core#19). Next step: **R2a**.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -78,7 +78,7 @@ This is the design R1 turns into schemas. The names are proposals until R1 confi
 | Pipeline | `pipelines/<name>.yaml` | `trigger`, required `onStart` and `onEnd` (`[]` allowed), the `steps` tree |
 | Step | `steps/<name>.yaml`, or inline | exactly one executor, plus `inputs`, `outputs`, `paths`, `after`, `owner`, `gate` |
 | Operator | inside `steps` | a list is a sequence; `foreach`, `parallel`, `when`, and later `call` |
-| Gate | `gate:` on any step or block | the transition after it: `none`, `auto` or `human` |
+| Gate | `gate:` on a step or block node in the pipeline, never in a step file (D13) | the transition after it: `none`, `auto` or `human` |
 | Artifact | `artifacts/<name>.yaml` | a typed piece of state that steps pass on, with a `kind` |
 
 A step has exactly one executor:
@@ -148,7 +148,7 @@ steps:
     steps:
       - step: implement
         gate: {auto: {agent: reviewer, model: deep}, merge: auto, retry: 2, then: human}
-  - when: {artifact: spec, has_section: Docs}
+  - when: {artifact: spec, section: Docs}
     steps: [docs]
 onEnd: [git.sync-base, git.remove-run-artifacts, pr.ready, tracker.close]
 ```
@@ -181,6 +181,7 @@ keep: run
   - Each step, or each element of a fan-out, works on its own sub-branch `fab0/<run>/<unit>`, cut from its parent branch, in its own worktree.
   - A unit's pull request targets its parent branch.
   - A unit that fans out again is the parent of its children, named `<unit>--<child>`. A git ref can't be both a file and a directory, which is why the run branch is `…/base` and children aren't `<unit>/<child>`.
+  - A block (`foreach`, `parallel`, `when`) that has a gate gets a branch of its own: its children branch from it, and the block's gate governs the block's pull request into its parent. A block without a gate adds no branch; its children target the block's parent (D14).
   - The run's pull request into `main` is the last gate, `human` by default.
 - **`flat`:** each unit's pull request targets the base branch. This is the 0.5 behaviour, for factories that want each step on `main`.
 - **No force-push, anywhere.** A child is synced by merging its parent into it, never by a rebase.
@@ -275,12 +276,20 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
 - **D9. The docs repository keeps its local agents and skill** as its own factory, and rebuilds its wiring on schema 2. *Proposed; settle in R7.*
 - **D10. Run branches, dependencies and blocking, and agent merges** are part of the core, as described in [Target model](#target-model). *Made, 14 Oct 2026; details confirmed in R1.*
 - **D11. A factory's agents are distributed by copying.** An example ships its agents and skills as files to copy into `.claude/agents/` and `.claude/skills/`, each with a provenance line (`# from fab0-dev/fab0-examples <example>--v<version>`), as recipes already do. They also ship as a plugin in the examples marketplace, for teams that want updates without owning the files. Rejected: user-level agents, which aren't shared through git, and submodules, which are heavy. fab0's own factory copies the `story` example in R8. *Made, 14 Oct 2026.*
+- **D12. D5, D6, D7 and D8 are made as written.** The owner chose each in R1. *Made, 14 Oct 2026.*
+- **D13. Gates belong to the pipeline, never to a step file.** A gate is a transition between steps, and the same step may be gated differently in two pipelines. *Made in R1, 14 Oct 2026.*
+- **D14. A gated block has a branch of its own.** A `foreach`, `parallel` or `when` with a gate gets a sub-branch; its children branch from it, and the block's gate governs the block's pull request into its parent. A block without a gate adds no branch. *Made in R1, 14 Oct 2026.*
+- **D15. A factory keeps its own list formats.** A list artifact maps its element fields in `elements` (`id`, `title`, `repo`, `after`, `paths`, and `at` for a nested list). The engine reads those, and the factory's schema checks the rest. *Made in R1, 14 Oct 2026.*
+- **D16. State passes between steps through artifacts, or through return `data`.** A step's return may carry `data`, checked against the step's `return.schema`. Later steps read it in `with` templates as `{<step>.<field>}`. Other placeholders are `{run}`, `{run.<field>}` (the run's tracker item), `{unit}` and `{unit.<field>}`. *Made in R1, 14 Oct 2026.*
+- **D17. The core verdict has no delivery fields.** `unmet` is gone. A factory's own review conventions go in `details`, which fab0 records and doesn't read. *Made in R1, 14 Oct 2026.*
+- **D18. Runs that open no pull request keep their ledger on a branch.** That branch (`ledger.branch`) is pushed and never merged, because the ledger must live in git (P3) and nothing may push to `main`. The alternative, ledger entries as tracker comments, would split the record. *Proposed; settle in R2e.*
+- **D19. Schema 2 sits beside schema 1 until R2a.** It lives in `plugins/fab0/schemas/v2/`, so the 0.5 resolver and its tests keep working. R2a moves schema 2 into `plugins/fab0/schemas/` and deletes schema 1. *Made in R1, 14 Oct 2026.*
 
 ## Steps
 
 Each step has an exit check. A step is done when its check has passed, not when its files exist. The final check (R8) is a real run.
 
-- [ ] **R0. Base and freeze.**
+- [x] **R0. Base and freeze.**
   - Home repo:
     - this guide;
     - `CLAUDE.md` in refactor mode, with P0–P11;
@@ -291,7 +300,8 @@ Each step has an exit check. A step is done when its check has passed, not when 
   - A freeze note in fab0-core and fab0-recipes. In docs: a banner, its factory archived, the plugin disabled.
   - Close fab0-dev/fab0#17, #18 and #20, and fab0-dev/docs#3.
   - *Exit:* the four pull requests are merged, and a fresh session here no longer loads the `fab0:*` agents and skills.
-- [ ] **R1. Model spec** (fab0-core).
+  - *Result:* fab0-dev/fab0#21, fab0-dev/fab0-core#18, fab0-dev/fab0-recipes#4 and fab0-dev/docs#5 merged on 14 Oct 2026; the four issues closed with pointers to the backlog.
+- [x] **R1. Model spec** (fab0-core).
   - Settle D5–D8.
   - Write the schema 2 files: project, pipeline, step, artifact, gate verdict, ledger entry, return.
   - Build three fixture factories under `tests/fixtures/`:
@@ -299,6 +309,7 @@ Each step has an exit check. A step is done when its check has passed, not when 
     - a docs-like one;
     - a non-delivery triage pipeline: `issue` and `none` artifacts, `when`, a `command` gate, `flat`, no pull requests.
   - *Exit:* each fixture validates against the schemas with a plain JSON Schema validator, and every operator, gate option, artifact kind and branching mode appears in at least one of them.
+  - *Result:* fab0-dev/fab0-core#19. Schema 2 is in `plugins/fab0/schemas/v2/`, the fixtures in `tests/fixtures/v2/{story,docs,triage}`. `tests/test_schema_v2.py` (19 tests) validates every fixture file and inline step with `jsonschema`, checks references resolve, checks that the fixtures together use every operator (`call` is reserved and excluded), gate option, artifact kind, executor, trigger and branching mode, and checks that 11 kinds of invalid wiring are refused. Full suite: 99 passed; ruff clean.
 - [ ] **R2. Engine core** (fab0-core). One PR per sub-step.
   - [ ] **R2a.** The module split (D6). The schema 2 loader and `validate`, which refuses schema 1.
   - [ ] **R2b.** The step kinds, sequence, `foreach`, `parallel` and `when`. Unit states, with every blocking reason except cross-run claims and tracker relations. Lanes, generalised from the 0.5 union-find to `paths` and `after`.
@@ -391,3 +402,4 @@ The last commits before the refactor, for reading the 0.5 design and run history
 Newest last. One line per session: date, step, what happened.
 
 - 14 Oct 2026, R0. Architecture direction set; this guide written; base change and freeze PRs opened.
+- 14 Oct 2026, R0 merged. R1: D5–D8 made as proposed (D12); schema 2 and three fixture factories written (fab0-dev/fab0-core#19); D13–D19 recorded, D18 open for R2e.
