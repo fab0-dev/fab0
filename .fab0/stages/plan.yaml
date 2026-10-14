@@ -1,4 +1,0 @@
-# from fab0-dev/fab0-recipes story--v0.1.0
-stage: plan
-action: plan           # tasks.yaml → Task sub-issues, each assigned to its repo's owner
-inputs: [tasks]

@@ -10,7 +10,7 @@
     }
   },
   "enabledPlugins": {
-    "fab0@fab0": true
+    "fab0@fab0": false
   },
   "permissions": {
     "deny": [

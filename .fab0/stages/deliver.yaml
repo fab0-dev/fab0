@@ -1,5 +1,0 @@
-# from fab0-dev/fab0-recipes story--v0.1.0
-stage: deliver
-action: deliver        # appends the review results to the spec; its PR closes the Story
-inputs: [spec]
-gate: human

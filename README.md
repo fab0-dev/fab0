@@ -1,27 +1,27 @@
 # fab0
 
-fab0 runs software delivery as pipelines of Claude Code agents. Each pipeline is wired in a few short YAML files and carried on GitHub.
+fab0 is a toolkit for building and operating software factories. A factory is one or more pipelines of steps, logical operators and gates, wired in short YAML files, run by Claude Code agents and delivered through git and an issue tracker. fab0 provides the engine that runs a pipeline end to end, the git workflow, tracker utilities and examples; which agents and skills a factory uses is up to the factory.
 
-- **Plugins carry behaviour.** Agents, skills and standards are ordinary Claude Code plugins. fab0 adds no conventions to them.
-- **The project carries the wiring.** Stages, pipelines and artifact types are short files in the project's `.fab0/` directory.
-- **A script routes, not the model.** The deterministic resolver `fab0-resolve` picks the next stage from the pipeline, the ledger in git and the facts on GitHub.
-- **Each fact has one home.** Git holds content. GitHub holds human decisions; merging a stage's pull request is its approval. The Projects board only shows the state.
+- **Building blocks, not a factory.** fab0 holds only what runs, checks and connects pipelines. Agents, skills, artifact formats and processes belong to the factory.
+- **The project carries the wiring.** Pipelines, steps, gates and artifacts are short files in the project's `.fab0/` directory. Agents and skills are ordinary Claude Code agents, skills and plugins, and need no fab0 conventions.
+- **A script routes, not the model.** A deterministic engine picks the next steps from the pipeline, the ledger in git and the facts in the tracker.
+- **Agents do the work the gates allow.** Every transition is a gate: none, automatic or human. A run works on its own branch, with sub-branches for parallel steps, and the dependencies it declares or the tracker carries decide what can run at once.
+- **Each fact has one home.** Git holds content and delivery. The tracker holds human decisions. A board only shows the state.
 
 ## Status
 
-Pre-alpha. The resolver, the core agents and skills, and the `story` recipe exist; fab0 now runs its own changes as Stories. Expect breaking changes. What comes next is in the [roadmap](ROADMAP.md); how fab0 works is in the [docs](https://github.com/fab0-dev/docs).
+Pre-alpha, and being refactored. fab0 0.5 was a delivery factory with its own agents built in; it is being rebuilt as a toolkit, and its factories are frozen until the new version ships. The plan, the target model and the progress are in [REFACTOR.md](REFACTOR.md). The [docs](https://github.com/fab0-dev/docs) still describe 0.5 and are rewritten during the refactor.
 
 ## Repositories
 
-fab0 is built with fab0. This repository is the home repo of the fab0 product. It holds the product's wiring, its run ledgers and the [roadmap](ROADMAP.md). Code and documentation live in their own repositories:
+fab0 is built with a factory made from fab0. This repository is the home repo of the fab0 product. It holds the rules, the [refactor guide](REFACTOR.md) and, once the refactor is done, fab0's own factory. Code and documentation live in their own repositories:
 
 | Repository | Contents |
 |---|---|
-| [`fab0-dev/fab0`](https://github.com/fab0-dev/fab0) | Home repo: this README, the rules, `.fab0/` (fab0's own wiring), and the specs and ledgers of fab0's own runs |
-| [`fab0-dev/fab0-core`](https://github.com/fab0-dev/fab0-core) | The `fab0` plugin marketplace and the core plugin: the resolver, the schemas, and the core agents and skills |
-| [`fab0-dev/fab0-recipes`](https://github.com/fab0-dev/fab0-recipes) | Ready-made `.fab0/` setups to copy into a project |
-| [`fab0-dev/docs`](https://github.com/fab0-dev/docs) | The user documentation, with its own docs pipeline |
-| `fab0-dev/fab0-plugins` | Optional extension plugins (planned) |
+| [`fab0-dev/fab0`](https://github.com/fab0-dev/fab0) | Home repo: this README, the rules, the refactor guide, and later fab0's own factory |
+| [`fab0-dev/fab0-core`](https://github.com/fab0-dev/fab0-core) | The `fab0` plugin marketplace and the core plugin: the engine, the schemas, the git and tracker utilities, and the skills fab0 itself needs |
+| [`fab0-dev/fab0-recipes`](https://github.com/fab0-dev/fab0-recipes) | Example factories to copy, with their agents and skills; to be renamed `fab0-examples` |
+| [`fab0-dev/docs`](https://github.com/fab0-dev/docs) | The user documentation |
 
 ## Installing
 
@@ -32,7 +32,7 @@ Install the core plugin through Claude Code's plugin system:
 /plugin install fab0@fab0
 ```
 
-In this repo, `.claude/settings.json` already declares the `fab0` marketplace, with auto-update, and enables the plugin. That declaration alone isn't enough for every client: the desktop app, for example, doesn't load a plugin that is enabled but not installed. Install it once for this repo, from the repo root:
+During the refactor, this repo's `.claude/settings.json` declares the `fab0` marketplace but keeps the plugin disabled, and the rest of this section applies again after the refactor. Normally the file declares the `fab0` marketplace, with auto-update, and enables the plugin. That declaration alone isn't enough for every client: the desktop app, for example, doesn't load a plugin that is enabled but not installed. Install it once for this repo, from the repo root:
 
 ```bash
 claude plugin install fab0@fab0 --scope project
