@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R2a done; R2b in review (fab0-dev/fab0-core#21). Next step: **R2c**.
+**Status:** R2b done; R2c in review (fab0-dev/fab0-core#22). Next step: **R2d**.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -314,6 +314,15 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
   *Made in R2b, 14 Oct 2026.*
 - **D27. A command step is recorded with its exit code.** A non-zero code blocks the unit (`failed`) until R2d's retry policy decides what follows. *Made in R2b, 14 Oct 2026; retry settled in R2d.*
 - **D28. A unit with gate `none` merges into its parent without a pull request.** `apply` merges it, so it waits in `waiting(merge)` until then. *Proposed; settle in R3.*
+- **D29. A tool artifact is read by the agent, not the engine.** The engine can't call tools. A tool input is hashed by its call (name and rendered arguments), so a change of the outside value doesn't make work stale. `foreach` lists, `elements` and `when` conditions therefore read file artifacts only. *Made in R2c, 14 Oct 2026.*
+- **D30. Questions are answered through the inputs.** An attempt that returns questions waits until a person changes an input: the issue, the pull request's reviews, or a file. Its failed checks don't count against it meanwhile. *Made in R2c, 14 Oct 2026.*
+- **D31. A recorded attempt stays while its inputs and outputs stand.** It is reworked when its checks failed, an input's hash changed, or an output it wrote is gone. A person's edit of an output keeps it: the edit is reviewed with the rest, and anything that reads the output goes stale. Reviews count as an input only when they ask for changes or comment. *Made in R2c, 14 Oct 2026.*
+- **D32. Claims are enforced at `record`.**
+  - A file the unit changed outside its claims is a finding for the next attempt.
+  - A change in a repository the unit may not write refuses the record, because it can't be told apart from a person's own work there.
+  - Writes outside every repository of the workspace (from #20) remain open for R3.
+
+  *Made in R2c, 14 Oct 2026.*
 
 ## Steps
 
@@ -353,7 +362,13 @@ Each step has an exit check. A step is done when its check has passed, not when 
       - Units get the states `ready`, `running`, `waiting(merge|human|gate|questions)`, `blocked(order|data|claim|limit|invalid-dependency|condition|failed|start)` and `done`; gated blocks get `open`.
       - Lanes became claims taken in tree order (D26).
       - `tests/test_run.py` drives the three fixtures through real git repositories, including a gated parallel block with its own branch and a ledger-branch run. 107 tests pass and ruff is clean.
-  - [ ] **R2c.** The artifact kinds and their hashers, the verify ladder, staleness pinned to the parent branch's SHA.
+  - [x] **R2c.** The artifact kinds and their hashers, the verify ladder, staleness pinned to the parent branch's SHA.
+    - *Result:* fab0-dev/fab0-core#22.
+      - Every kind has a reader and a hasher.
+      - `record` hashes the outputs and runs the checks: parse, schema, `sections`, `lint` and `script`.
+      - Changes outside the unit's claims are findings. Changes in a repository the unit may not write refuse the record (the in-workspace half of #20).
+      - Failed checks, changed inputs and removed outputs hand out a new attempt with a Rework brief. Checks that keep failing stop after `retry`.
+      - `tests/test_rework.py` covers each case. 120 tests pass and ruff is clean.
   - [ ] **R2d.** Gates with retry and escalation, and the core verdict.
   - [ ] **R2e.** Lifecycle actions, triggers, and the generic ledger with a configurable path.
   - [ ] **R2f.** Remove every delivery hard-code.
@@ -445,3 +460,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R0 merged. R1: D5–D8 made as proposed (D12); schema 2 and three fixture factories written (fab0-dev/fab0-core#19); D13–D19 recorded, D18 open for R2e.
 - 14 Oct 2026, R1 merged; D18 made (D20). R2a: engine package and schema 2 `validate` (fab0-dev/fab0-core#20); D21–D22 recorded; CI workflow patch left to a person.
 - 14 Oct 2026, R2a merged with the CI workflow patch. R2b: units, states, hand-outs and records (fab0-dev/fab0-core#21); D23–D27 made, D28 open for R3.
+- 14 Oct 2026, R2b merged. R2c: artifact kinds, checks, staleness and rework (fab0-dev/fab0-core#22); D29–D32 made.
