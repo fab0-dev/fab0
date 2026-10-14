@@ -20,7 +20,7 @@ fab0 is built with a factory made from fab0. This repository is the home repo of
 |---|---|
 | [`fab0-dev/fab0`](https://github.com/fab0-dev/fab0) | Home repo: this README, the rules, the refactor guide, and later fab0's own factory |
 | [`fab0-dev/fab0-core`](https://github.com/fab0-dev/fab0-core) | The `fab0` plugin marketplace and the core plugin: the engine, the schemas, the git and tracker utilities, and the skills fab0 itself needs |
-| [`fab0-dev/fab0-recipes`](https://github.com/fab0-dev/fab0-recipes) | Example factories to copy, with their agents and skills; to be renamed `fab0-examples` |
+| [`fab0-dev/fab0-examples`](https://github.com/fab0-dev/fab0-examples) | Example factories to copy, with their agents and skills, also a plugin marketplace: `story` (delivery) and `triage` |
 | [`fab0-dev/docs`](https://github.com/fab0-dev/docs) | The user documentation |
 
 ## Installing
