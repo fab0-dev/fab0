@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R2d done; R2e in review (fab0-dev/fab0-core#24); R2 complete with it. Next step: **R3**.
+**Status:** R2 done; R3a in review (fab0-dev/fab0-core#25). Next step: **R3b**.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -336,6 +336,20 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
 - **D38. Finished work survives the run's clean-up.** A `keep: run` artifact that the run's end removed is read as it was before its removal. Without this, the removal would undo every unit that read or wrote the artifact. *Made in R2e, 14 Oct 2026.*
 - **D39. A run ends with its run pull request's merge.** Its states run `units`, then `waiting` (only the merge of the run branch into the base is left; a person merges it), then `done` (the run branch is in the base of every repository that has it). Making that last merge configurable waits until a factory needs it (P8). *Made in R2e, 14 Oct 2026.*
 - **D40. A run finds its pipeline by its trigger.** Without `--pipeline`, the engine picks the one listed pipeline whose trigger matches the run: the item's issue type and label, or the manual id pattern. None or several is an error that names them. *Made in R2e, 14 Oct 2026.*
+- **D41. D28 is made as written.** The owner chose it in R3a: a unit with gate `none` merges into its parent directly, without a pull request. The merge commit and the ledger record it. *Made, 14 Oct 2026.*
+- **D42. `apply` never moves anybody's checkout.**
+  - It changes a branch through plumbing (`merge-tree`, `commit-tree`, `update-ref`), or in the branch's own checkout only when that checkout is clean.
+  - A merge that conflicts changes nothing.
+  - It pushes only when there is an `origin`.
+
+  *Made in R3a, 14 Oct 2026.*
+- **D43. A pull request that a person can act on exists for every unit waiting on a person or a gate.**
+  - It is a draft until the unit's gate approves, and `apply` never turns it back into a draft, so a person's "ready" stands (from #17).
+  - Questions and escalations are posted once, each marked by unit and attempt.
+  - A run branch with nothing in it gets an empty start commit, so its pull request can open.
+
+  *Made in R3a, 14 Oct 2026.*
+- **D44. `merge: auto` waits for the pull request's required checks.** A pending check leaves the unit waiting for the merge. A failing check is reported, and what follows a failing check is decided in R3b along with conflicts. *Made in R3a, 14 Oct 2026.*
 
 ## Steps
 
@@ -408,11 +422,24 @@ Each step has an exit check. A step is done when its check has passed, not when 
     - pytest runs on the three fixtures and `ruff` is clean;
     - a search of the engine for `plan`, `deliver`, `tasks.json`, task ids, `traces_to` and `scenario` finds no delivery logic.
   - *Result:* passed on 14 Oct 2026 with R2e: 141 tests over the `story`, `docs` and `triage` fixtures, ruff clean, and the search finds nothing.
-- [ ] **R3. Git workflow and tracker** (fab0-core).
-  - `apply`, with the action catalogue (`git.*`, `pr.*` including `pr.merge` and its policy check, `tracker.*`).
-  - The `run` and `flat` branching modes: parent sync by merge, conflict detection, the branch-push claim, cross-run claims.
-  - The GitHub tracker adapter: it reads blocked-by and sub-issue relations as dependencies, projects `after` when it creates items, and shows blocking signals.
-  - Carry #17 over: a pull request's draft state changes only when its review changes.
+- [ ] **R3. Git workflow and tracker** (fab0-core). One PR per sub-step.
+  - [x] **R3a.** `apply` with the action catalogue (`git.*`, `pr.*` including `pr.merge` and its policy check, `tracker.*`), unit merges, unit pull requests, and #17.
+    - *Result:* fab0-dev/fab0-core#25.
+      - `apply` performs every action whose check fails.
+      - It merges units: gate `none` directly (D28), `merge: auto` after approval within `git.auto_merge` and once the required checks pass.
+      - It gives units waiting on people a pull request, a draft until approved and never drafted again.
+      - It posts questions and escalations once. A conflicting merge changes nothing.
+      - Every action was applied twice on the fake with no change the second time. 150 tests pass (in parallel now) and ruff is clean.
+  - [ ] **R3b.** Conflicts and claims:
+    - a merge that conflicts becomes rework for the unit, with the conflict in its brief, and escalates on a second conflict;
+    - `apply` syncs a reworked unit's branch with its parent by merge;
+    - pushing a unit's branch claims it, across machines;
+    - claims across open runs (`parallel.cross_run`);
+    - writes outside every repository of the workspace are reported (the rest of #20).
+  - [ ] **R3c.** The tracker's dependencies:
+    - blocked-by and sub-issue relations read as dependencies, with `blocked(tracker)` and `blocked(invalid-dependency)`;
+    - `tracker.child.sync` projects `after` as blocked-by;
+    - blocking signals shown on the tracker.
   - *Exit:*
     - every action passes on `GhFake`, twice in a row with no change the second time;
     - a simulated conflict between two units ends in rework, then escalation;
@@ -495,3 +522,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R2b merged. R2c: artifact kinds, checks, staleness and rework (fab0-dev/fab0-core#22); D29–D32 made.
 - 14 Oct 2026, R2c merged. R2d: auto gates, retry and escalation (fab0-dev/fab0-core#23); D33–D36 made.
 - 14 Oct 2026, R2d merged. R2e: lifecycle actions, action checks and triggers (fab0-dev/fab0-core#24); R2f needed no change; R2 complete; D37–D40 made.
+- 14 Oct 2026, R2e merged. R3 split into R3a–R3c. R3a: `apply` (fab0-dev/fab0-core#25); D28 made (D41); D42–D44 made; tests run in parallel.
