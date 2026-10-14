@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R3b done; R3c in review (fab0-dev/fab0-core#27), which finishes R3. Next step: **R4**.
+**Status:** R3 done; R4 in review (fab0-dev/fab0-core#28). Next step: **R5**.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -382,6 +382,16 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
   - *Made in R3c, 14 Oct 2026.*
 - **D50. `after` is projected once.** `tracker.child.sync` adds blocked-by from `after` only for items it creates, both to and from the new item. It never re-adds a relation between items that already existed, so a relation a person removed stays removed. *Made in R3c, 14 Oct 2026.*
 - **D51. Signals go in one board field.** With `tracker.fields.signal` set, `apply` writes into that text field, for the run's item and each element's item, either `done` or the first unfinished unit and why. It writes only when the text changes, and the engine never reads the field back. Blocked-by relations are the other half of the projection. *Made in R3c, 14 Oct 2026.*
+- **D52. Core ships no agents (P0).** The delivery agents, `spec-format` and `tasks.json` left the plugin in R4. So did `scripts/check-agents.py`, which no longer ran: it was built on the 0.5 test workspace. R5 rewrites them in the `story` example from fab0-core's history before R4 (`7e29840`). *Made in R4, 14 Oct 2026.*
+- **D53. A pipeline's `onStart` is done once the run has a ledger entry.** Before that, its actions are checked like any other. After it, what they did may be undone on purpose, by `onEnd` or a person, and must not be redone. The end-to-end check found this: the triage `onStart` adds a label that its `onEnd` removes, and `apply` re-added it until it gave up. A block's `onStart` is still always checked (P8). *Made in R4, 14 Oct 2026.*
+- **D54. A `human: {via: label}` gate is decided by the label.** When the run's item carries the gate's label, the unit is done on a ledger branch, or `apply` merges it like gate `none` when it has a branch to merge. *Made in R4, 14 Oct 2026.*
+- **D55. `inbox` finds open runs from their traces, with no registry:**
+  - run branches that aren't in the base yet;
+  - run folders on a ledger branch;
+  - open items that match an issue trigger.
+  It sorts units into what waits on the asker's roles, what anyone can run, what waits on others, and what is blocked by a signal a person may act on. Units that only wait their turn aren't listed.
+  *Made in R4, 14 Oct 2026.*
+- **D56. Core's skills are checked end to end, by hand.** `scripts/e2e-triage.py` runs `/fab0:run` headlessly on a copy of the `triage` fixture, against `GhFake` and stand-in MCP servers, through a person's label to the end. It costs tokens, so it runs when a skill, a hand-out or a brief changes, not in CI. *Made in R4, 14 Oct 2026.*
 
 ## Steps
 
@@ -493,7 +503,7 @@ Each step has an exit check. A step is done when its check has passed, not when 
     - `test_conflicts.py` takes a conflict through rework to escalation;
     - `test_a_blocked_by_on_the_board_changes_what_next_hands_out` adds and removes relations on the fake.
     - The real `gh` write and relation paths are first exercised in R6.
-- [ ] **R4. Session skills** (fab0-core).
+- [x] **R4. Session skills** (fab0-core).
   - `/fab0:run` executes the four step kinds, runs ready units in parallel as subagents in their own worktrees, and calls `apply`.
   - `/fab0:inbox` shows units and their blocking signals.
   - `fab0:github` keeps only what `apply` doesn't do.
@@ -501,6 +511,23 @@ Each step has an exit check. A step is done when its check has passed, not when 
   - *Exit:*
     - `claude plugin validate --strict` passes;
     - a headless `claude -p` runs the triage fixture end to end on `GhFake`.
+  - *Result:* fab0-dev/fab0-core#28, 14 Oct 2026.
+    - `/fab0:run` loops `apply`, `next`, checkouts, execution, `record` and commit. Agent hand-outs of a round run as parallel subagents in their own worktrees. Commands run in their worktree, and tools are called by the session.
+    - `/fab0:inbox` renders the new `inbox` command (D55).
+    - `fab0:github` now covers only setup (scopes, labels, issue types, board fields, the base branch ruleset) and the rules.
+    - The delivery parts left (D52).
+    - Changes to the engine:
+      - `apply` pushes the ledger branch;
+      - label gates are decided (D54);
+      - `onStart` isn't redone once the run has records (D53);
+      - pending hand-outs live in the shared git directory, so `record` works from any checkout.
+    - Exit: `claude plugin validate --strict` passes for the marketplace, the plugin and its skills. `scripts/e2e-triage.py` passed all twelve checks over two headless sessions (Sonnet orchestrating, Haiku classifying), for about $0.26:
+      - the agent read related issues through a tool;
+      - a command gate approved;
+      - `apply` labelled the item and pushed the ledger;
+      - the page tool posted once and waited on the label;
+      - after the label, `onEnd` removed the working label and commented.
+    - The first attempt failed and showed D53. 170 tests pass and ruff is clean.
 - [ ] **R5. Examples repository.**
   - Rename `fab0-dev/fab0-recipes` to `fab0-dev/fab0-examples`, after asking the owner. Make it a marketplace.
   - The `story` example:
@@ -510,7 +537,7 @@ Each step has an exit check. A step is done when its check has passed, not when 
     - a settings snippet with the merge guard;
     - a README with the setup checklist.
   - A small non-delivery example.
-  - `check-examples` in CI, and `check-agents.py` moved here. Carry #18 over: an implementer's `questions` may be absent or empty, never `null`, and gaps go in `questions`.
+  - `check-examples` in CI, and `check-agents.py` rewritten here (D52). Carry #18 over: an implementer's `questions` may be absent or empty, never `null`, and gaps go in `questions`.
   - *Exit:*
     - each example, copied into an empty repository, passes `fab0-resolve validate`;
     - `check-agents.py` passes for the `story` agents.
@@ -575,3 +602,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R2e merged. R3 split into R3a–R3c. R3a: `apply` (fab0-dev/fab0-core#25); D28 made (D41); D42–D44 made; tests run in parallel.
 - 14 Oct 2026, R3a merged. R3b: conflicts, failing checks and claims (fab0-dev/fab0-core#26); D45–D48 made; the #17 and #20 backlog items are done.
 - 14 Oct 2026, R3b merged. R3c: the tracker's dependencies and signals (fab0-dev/fab0-core#27); D49–D51 made; R3 is done.
+- 14 Oct 2026, R3c merged. R4: session skills, `inbox`, the delivery parts out, an end-to-end check (fab0-dev/fab0-core#28); D52–D56 made.
