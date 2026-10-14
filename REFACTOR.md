@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R3 done; R4 in review (fab0-dev/fab0-core#28). Next step: **R5**.
+**Status:** R4 done; R5 in review (fab0-dev/fab0-examples#5, with fab0-dev/fab0-core#29). Next step: **R6**, which needs the owner's approval to create `fab0-dev/sandbox`.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -392,6 +392,24 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
   It sorts units into what waits on the asker's roles, what anyone can run, what waits on others, and what is blocked by a signal a person may act on. Units that only wait their turn aren't listed.
   *Made in R4, 14 Oct 2026.*
 - **D56. Core's skills are checked end to end, by hand.** `scripts/e2e-triage.py` runs `/fab0:run` headlessly on a copy of the `triage` fixture, against `GhFake` and stand-in MCP servers, through a person's label to the end. It costs tokens, so it runs when a skill, a hand-out or a brief changes, not in CI. *Made in R4, 14 Oct 2026.*
+- **D57. An example is a directory that is also a plugin.** The directory holds:
+  - `.fab0/`;
+  - `agents/`, `skills/` and `hooks/`;
+  - `claude-settings.json`;
+  - its README;
+  - `.claude-plugin/plugin.json`.
+
+  The repository's marketplace lists each example as a plugin, so one set of files serves both ways of using it (D11). Copying puts the agents, skills and hooks under `.claude/`, and the steps name them plainly (`spec-author`). Installing the plugin needs the prefix (`story:spec-author`). The wiring is always copied. Every copied file names its source and release on its first line: a comment, a JSON `"$comment"`, or an HTML comment after a Markdown file's front matter.
+
+  *Made in R5, 14 Oct 2026.*
+- **D58. The merge guard is a `PreToolUse` hook on Bash.** It blocks commands the model issues that would:
+  - merge a pull request, with `gh pr merge` or through the API;
+  - push to the base branch;
+  - force-push.
+
+  It reads the base branch from `fab0.yaml`. `apply` merges through its own git calls, which don't pass through the hook, so agent merges into run branches still work. It backs up the settings' deny rules, which a compound command can slip past. *Made in R5, 14 Oct 2026.*
+- **D59. Examples aren't tagged before fab0 0.6.** They need schema 2, which the 0.5 release refuses. Until R8, their CI checks against fab0-core's `main`. From R8 it checks against the release the marketplace points at, and the examples are tagged `story--v0.2.0` and `triage--v0.1.0`. *Made in R5, 14 Oct 2026.*
+- **D60. The agent check is an end-to-end run.** `check-agents.py` in the examples repository runs the `story` example through `/fab0:run` on a small codebase, rather than each agent alone on a canned brief. So the agents are checked with the briefs the engine really renders, the gate that really judges them, and the merges `apply` really makes. A script stands in for the product owner's merge. *Made in R5, 14 Oct 2026.*
 
 ## Steps
 
@@ -528,7 +546,7 @@ Each step has an exit check. A step is done when its check has passed, not when 
       - the page tool posted once and waited on the label;
       - after the label, `onEnd` removed the working label and commented.
     - The first attempt failed and showed D53. 170 tests pass and ruff is clean.
-- [ ] **R5. Examples repository.**
+- [x] **R5. Examples repository.**
   - Rename `fab0-dev/fab0-recipes` to `fab0-dev/fab0-examples`, after asking the owner. Make it a marketplace.
   - The `story` example:
     - the three agents and `spec-format`, made to work both from a brief and by hand;
@@ -541,6 +559,21 @@ Each step has an exit check. A step is done when its check has passed, not when 
   - *Exit:*
     - each example, copied into an empty repository, passes `fab0-resolve validate`;
     - `check-agents.py` passes for the `story` agents.
+  - *Result:* fab0-dev/fab0-examples#5 and fab0-dev/fab0-core#29, 14 Oct 2026.
+    - The repository is renamed and is a marketplace of its examples (D57).
+    - `story` (`v0.2.0`):
+      - schema 2 wiring with `run` branching and a reviewer gate that merges;
+      - the three agents, rewritten for schema 2 briefs and for use by hand. #18 is carried over: the implementer sees the whole task list, and `questions` is never `null`;
+      - `spec-format` with `scenarios`;
+      - the merge guard (D58);
+      - a README with the setup checklist.
+    - `triage` (`v0.1.0`) delivers no code. It has a command gate that checks the classification against the project's areas.
+    - `check-examples` replaces `check-recipes`, and nothing is tagged yet (D59).
+    - Exit:
+      - `scripts/check-examples` passes for both examples, copied into empty repositories: source lines, JSON, the merge guard against ten commands, and `fab0-resolve validate`;
+      - `claude plugin validate --strict` passes for the marketplace and each plugin;
+      - `check-agents.py` (D60) passed all nine checks for $0.93. The spec author wrote seven scenarios and two ordered tasks. Each task was implemented, approved by the reviewer and merged into the run branch by `apply`. The run branch's tests pass, and the run waits for a person.
+    - The first attempt found only a fault in the check script itself: it hid the project's agents.
 - [ ] **R6. First real run, on a sandbox.** Run the `story` example on a real Story in a throwaway repository (`fab0-dev/sandbox`, created after asking the owner), with two parallel tasks and one task that depends on them.
   - *Exit:*
     - the task pull requests are reviewed and merged into the run branch by agents;
@@ -603,3 +636,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R3a merged. R3b: conflicts, failing checks and claims (fab0-dev/fab0-core#26); D45–D48 made; the #17 and #20 backlog items are done.
 - 14 Oct 2026, R3b merged. R3c: the tracker's dependencies and signals (fab0-dev/fab0-core#27); D49–D51 made; R3 is done.
 - 14 Oct 2026, R3c merged. R4: session skills, `inbox`, the delivery parts out, an end-to-end check (fab0-dev/fab0-core#28); D52–D56 made.
+- 14 Oct 2026, R4 merged. `fab0-recipes` renamed `fab0-examples` with the owner's approval. R5: the `story` and `triage` examples, the marketplace, the merge guard, `check-examples` and `check-agents.py` (fab0-dev/fab0-examples#5, fab0-dev/fab0-core#29); D57–D60 made.

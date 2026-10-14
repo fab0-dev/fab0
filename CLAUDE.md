@@ -20,7 +20,7 @@ fab0 is being refactored from a delivery factory into that toolkit. Until step R
 
 Code goes elsewhere:
 - the engine, the schemas, the action catalogue, the tracker adapters and the skills fab0 itself needs go in `fab0-dev/fab0-core`;
-- example factories, with their agents and skills, go in `fab0-dev/fab0-recipes`, renamed `fab0-dev/fab0-examples` in R5;
+- example factories, with their agents and skills, go in `fab0-dev/fab0-examples` (formerly `fab0-recipes`);
 - the user documentation goes in `fab0-dev/docs`.
 
 The checkouts are siblings under one parent directory.
