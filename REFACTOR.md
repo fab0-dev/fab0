@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R2b done; R2c in review (fab0-dev/fab0-core#22). Next step: **R2d**.
+**Status:** R2c done; R2d in review (fab0-dev/fab0-core#23). Next step: **R2e**.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -323,6 +323,15 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
   - Writes outside every repository of the workspace (from #20) remain open for R3.
 
   *Made in R2c, 14 Oct 2026.*
+- **D33. A failed command step waits for a changed input.** A command is deterministic, so running it again unchanged gives the same result. It stays `blocked(failed)` until one of its inputs changes. This settles D27. *Made in R2d, 14 Oct 2026.*
+- **D34. Whoever merges decides.** A unit whose entry is on the branch it merges into is done, whatever its gate said: a person merging an escalated or rejected unit overrides the gate (P3). On the ledger branch, where nothing is merged, an auto gate's approval is the decision. *Made in R2d, 14 Oct 2026.*
+- **D35. A gated block isn't retried as a whole.**
+  - Its gate judges the block's units as they are; the entry records a hash of their attempts.
+  - A unit that moves on asks for a new decision.
+  - A reject or an escalation waits for a person, because which unit to redo can't be told from the block's verdict.
+
+  *Made in R2d, 14 Oct 2026.*
+- **D36. An agent gate runs on its own model class.** It uses the gate's model class, else the step's, else the project's first. Reviewing on a different class from the producer is the factory's choice. *Made in R2d, 14 Oct 2026.*
 
 ## Steps
 
@@ -369,7 +378,16 @@ Each step has an exit check. A step is done when its check has passed, not when 
       - Changes outside the unit's claims are findings. Changes in a repository the unit may not write refuse the record (the in-workspace half of #20).
       - Failed checks, changed inputs and removed outputs hand out a new attempt with a Rework brief. Checks that keep failing stop after `retry`.
       - `tests/test_rework.py` covers each case. 120 tests pass and ruff is clean.
-  - [ ] **R2d.** Gates with retry and escalation, and the core verdict.
+  - [x] **R2d.** Gates with retry and escalation, and the core verdict.
+    - *Result:* fab0-dev/fab0-core#23.
+      - `next` hands out auto gates: an agent with a review brief and the verdict schema, or a command.
+      - `record --gate` writes `<unit>-<attempt>-gate.yaml`.
+      - What follows each decision:
+        - approve: the merge;
+        - reject: a rework with the findings, until `retry` runs out, then `then: human` escalates and `then: fail` fails;
+        - escalate: a person decides.
+      - Gated blocks are judged once on their units' attempts. On the ledger branch the approval is the decision.
+      - `tests/test_gates.py` covers each case. 130 tests pass and ruff is clean.
   - [ ] **R2e.** Lifecycle actions, triggers, and the generic ledger with a configurable path.
   - [ ] **R2f.** Remove every delivery hard-code.
   - Reuse from the 0.5 script: `merge_patch`, `sha_json` and `sha_content`, the `Wiring` cross-checks, `Repo` (ledger discovery, `scope_state`), `GhCli` and `GhFake`, the lanes union-find.
@@ -461,3 +479,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R1 merged; D18 made (D20). R2a: engine package and schema 2 `validate` (fab0-dev/fab0-core#20); D21–D22 recorded; CI workflow patch left to a person.
 - 14 Oct 2026, R2a merged with the CI workflow patch. R2b: units, states, hand-outs and records (fab0-dev/fab0-core#21); D23–D27 made, D28 open for R3.
 - 14 Oct 2026, R2b merged. R2c: artifact kinds, checks, staleness and rework (fab0-dev/fab0-core#22); D29–D32 made.
+- 14 Oct 2026, R2c merged. R2d: auto gates, retry and escalation (fab0-dev/fab0-core#23); D33–D36 made.
