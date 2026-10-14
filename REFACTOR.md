@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R2c done; R2d in review (fab0-dev/fab0-core#23). Next step: **R2e**.
+**Status:** R2d done; R2e in review (fab0-dev/fab0-core#24); R2 complete with it. Next step: **R3**.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -332,6 +332,10 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
 
   *Made in R2d, 14 Oct 2026.*
 - **D36. An agent gate runs on its own model class.** It uses the gate's model class, else the step's, else the project's first. Reviewing on a different class from the producer is the factory's choice. *Made in R2d, 14 Oct 2026.*
+- **D37. Actions are applied, not recorded.** An action is done when its read-only check passes, because its result is a fact in git or the tracker (P3). So it writes no ledger entry, and doing it twice does no harm. `next` hands out actions whose check fails, and `apply` (R3) performs them. Run-level actions (`git.*`, `pr.open-run`, `pr.ready`, `pr.merge`) belong in the pipeline's `onStart` and `onEnd`, and `tracker.child.sync` in a foreach's `onStart`. *Made in R2e, 14 Oct 2026.*
+- **D38. Finished work survives the run's clean-up.** A `keep: run` artifact that the run's end removed is read as it was before its removal. Without this, the removal would undo every unit that read or wrote the artifact. *Made in R2e, 14 Oct 2026.*
+- **D39. A run ends with its run pull request's merge.** Its states run `units`, then `waiting` (only the merge of the run branch into the base is left; a person merges it), then `done` (the run branch is in the base of every repository that has it). Making that last merge configurable waits until a factory needs it (P8). *Made in R2e, 14 Oct 2026.*
+- **D40. A run finds its pipeline by its trigger.** Without `--pipeline`, the engine picks the one listed pipeline whose trigger matches the run: the item's issue type and label, or the manual id pattern. None or several is an error that names them. *Made in R2e, 14 Oct 2026.*
 
 ## Steps
 
@@ -358,7 +362,7 @@ Each step has an exit check. A step is done when its check has passed, not when 
     - a non-delivery triage pipeline: `issue` and `none` artifacts, `when`, a `command` gate, `flat`, no pull requests.
   - *Exit:* each fixture validates against the schemas with a plain JSON Schema validator, and every operator, gate option, artifact kind and branching mode appears in at least one of them.
   - *Result:* fab0-dev/fab0-core#19. Schema 2 is in `plugins/fab0/schemas/v2/`, the fixtures in `tests/fixtures/v2/{story,docs,triage}`. `tests/test_schema_v2.py` (19 tests) validates every fixture file and inline step with `jsonschema`, checks references resolve, checks that the fixtures together use every operator (`call` is reserved and excluded), gate option, artifact kind, executor, trigger and branching mode, and checks that 11 kinds of invalid wiring are refused. Full suite: 99 passed; ruff clean.
-- [ ] **R2. Engine core** (fab0-core). One PR per sub-step.
+- [x] **R2. Engine core** (fab0-core). One PR per sub-step.
   - [x] **R2a.** The module split (D6). The schema 2 loader and `validate`, which refuses schema 1.
     - *Result:* fab0-dev/fab0-core#20.
       - The engine is in `plugins/fab0/lib/fab0_engine/`, behind a `bin/fab0-resolve` shim.
@@ -388,12 +392,22 @@ Each step has an exit check. A step is done when its check has passed, not when 
         - escalate: a person decides.
       - Gated blocks are judged once on their units' attempts. On the ledger branch the approval is the decision.
       - `tests/test_gates.py` covers each case. 130 tests pass and ruff is clean.
-  - [ ] **R2e.** Lifecycle actions, triggers, and the generic ledger with a configurable path.
-  - [ ] **R2f.** Remove every delivery hard-code.
+  - [x] **R2e.** Lifecycle actions, triggers, and the generic ledger with a configurable path.
+    - *Result:* fab0-dev/fab0-core#24.
+      - Lifecycle actions and action steps are units, done when their read-only check passes (D37).
+      - A run is `units`, then `waiting` for its run pull request's merge, then `done`.
+      - Run artifacts removed at the end are read as they were (D38).
+      - Triggers pick the pipeline.
+      - `validate` places run-level and per-element actions.
+      - The ledger path and branch were already configurable (R2b, D18).
+      - `tests/test_lifecycle.py`, plus an end-to-end run in `test_run.py`. 141 tests pass and ruff is clean.
+  - [x] **R2f.** Remove every delivery hard-code.
+    - *Result:* nothing left to remove. The engine was rewritten in R2a–R2e without the 0.5 resolver, and the search below finds nothing in `plugins/fab0/lib`, `bin` or `schemas`. The one exception is the 0.5 `schemas/tasks.json`, which R4 removes with the agents that use it. No PR.
   - Reuse from the 0.5 script: `merge_patch`, `sha_json` and `sha_content`, the `Wiring` cross-checks, `Repo` (ledger discovery, `scope_state`), `GhCli` and `GhFake`, the lanes union-find.
   - *Exit:*
     - pytest runs on the three fixtures and `ruff` is clean;
     - a search of the engine for `plan`, `deliver`, `tasks.json`, task ids, `traces_to` and `scenario` finds no delivery logic.
+  - *Result:* passed on 14 Oct 2026 with R2e: 141 tests over the `story`, `docs` and `triage` fixtures, ruff clean, and the search finds nothing.
 - [ ] **R3. Git workflow and tracker** (fab0-core).
   - `apply`, with the action catalogue (`git.*`, `pr.*` including `pr.merge` and its policy check, `tracker.*`).
   - The `run` and `flat` branching modes: parent sync by merge, conflict detection, the branch-push claim, cross-run claims.
@@ -480,3 +494,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R2a merged with the CI workflow patch. R2b: units, states, hand-outs and records (fab0-dev/fab0-core#21); D23–D27 made, D28 open for R3.
 - 14 Oct 2026, R2b merged. R2c: artifact kinds, checks, staleness and rework (fab0-dev/fab0-core#22); D29–D32 made.
 - 14 Oct 2026, R2c merged. R2d: auto gates, retry and escalation (fab0-dev/fab0-core#23); D33–D36 made.
+- 14 Oct 2026, R2d merged. R2e: lifecycle actions, action checks and triggers (fab0-dev/fab0-core#24); R2f needed no change; R2 complete; D37–D40 made.
