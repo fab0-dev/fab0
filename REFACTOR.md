@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R4 done; R5 in review (fab0-dev/fab0-examples#5, with fab0-dev/fab0-core#29). Next step: **R6**, which needs the owner's approval to create `fab0-dev/sandbox`.
+**Status:** R5 done; R6 in review (fab0-dev/fab0-core#30, fab0-dev/fab0-examples#6). Next step: **R7**.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -410,6 +410,11 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
   It reads the base branch from `fab0.yaml`. `apply` merges through its own git calls, which don't pass through the hook, so agent merges into run branches still work. It backs up the settings' deny rules, which a compound command can slip past. *Made in R5, 14 Oct 2026.*
 - **D59. Examples aren't tagged before fab0 0.6.** They need schema 2, which the 0.5 release refuses. Until R8, their CI checks against fab0-core's `main`. From R8 it checks against the release the marketplace points at, and the examples are tagged `story--v0.2.0` and `triage--v0.1.0`. *Made in R5, 14 Oct 2026.*
 - **D60. The agent check is an end-to-end run.** `check-agents.py` in the examples repository runs the `story` example through `/fab0:run` on a small codebase, rather than each agent alone on a canned brief. So the agents are checked with the briefs the engine really renders, the gate that really judges them, and the merges `apply` really makes. A script stands in for the product owner's merge. *Made in R5, 14 Oct 2026.*
+- **D61. A merged unit isn't sent back for its own pull request's reviews.** Its reviews were its gate, and the merge decided (D34). Its other inputs still count. *Made in R6, 14 Oct 2026.*
+- **D62. A unit's reviews come from every pull request of its branch into its parent.** A person may merge a pull request at an older attempt, after which a new attempt needs a new pull request. The reviews on the merged one, such as answers to the agent's questions, still reach the new attempt. `apply` opens a new pull request when the newest one is merged or closed. *Made in R6, 14 Oct 2026.*
+- **D63. The home checkout's wiring governs a run.** Called from inside a unit's worktree, the engine reads the main checkout's `.fab0/`, not the copy on the unit's branch. When the home checkout isn't on the base branch, `status`, `next` and `apply` warn, and `/fab0:run` stops to ask. In the sandbox, a checked-out pull request had silently run older wiring. *Made in R6, 14 Oct 2026.*
+- **D64. A foreach closes its elements' items with `tracker.child.close`, in its `onEnd`.** Unit pull requests merge into the run branch, which closes no issue. This closes the R6 backlog item from R3c. *Made in R6, 14 Oct 2026.*
+- **D65. `apply` marks an approved unit's pull request ready before it merges it,** so GitHub's record shows the gate passed (D43). *Made in R6, 14 Oct 2026.*
 
 ## Steps
 
@@ -574,13 +579,26 @@ Each step has an exit check. A step is done when its check has passed, not when 
       - `claude plugin validate --strict` passes for the marketplace and each plugin;
       - `check-agents.py` (D60) passed all nine checks for $0.93. The spec author wrote seven scenarios and two ordered tasks. Each task was implemented, approved by the reviewer and merged into the run branch by `apply`. The run branch's tests pass, and the run waits for a person.
     - The first attempt found only a fault in the check script itself: it hid the project's agents.
-- [ ] **R6. First real run, on a sandbox.** Run the `story` example on a real Story in a throwaway repository (`fab0-dev/sandbox`, created after asking the owner), with two parallel tasks and one task that depends on them.
+- [x] **R6. First real run, on a sandbox.** Run the `story` example on a real Story in a throwaway repository (`fab0-dev/sandbox`, created after asking the owner), with two parallel tasks and one task that depends on them.
   - *Exit:*
     - the task pull requests are reviewed and merged into the run branch by agents;
     - the dependent task starts only after its dependencies are merged;
     - a blocked-by added by hand on the board holds a task back;
     - one human-merged pull request reaches `main`.
   - Problems found go back into R2–R5 before R7.
+  - *Result:* fab0-dev/fab0-core#30 and fab0-dev/fab0-examples#6, 14 Oct 2026. Every exit check passed on `fab0-dev/sandbox` (private), on real GitHub, for about $2.30 over six headless sessions:
+    - The Story (#1) was specced by `spec-author`. The owner reviewed it twice through Comment reviews: once to split the work, once to answer the agent's question about where the tool gets its data. The spec (#4) was then merged into the run branch.
+    - `apply` created three Task sub-issues (#5–#7), with T3 blocked by T1 and T2.
+    - T1 and T2 ran in parallel. Each was implemented, approved by the `reviewer` agent, and merged into the run branch by `apply` (#9, #10).
+    - T3 started only after both were merged. A blocked-by the owner added by hand (#7 blocked by #8) then held it as `blocked (tracker)` until #8 was closed. T3 was then implemented, approved and merged (#11).
+    - `onEnd` brought `main` in, removed the task list and marked the run pull request ready. The owner merged #2 into `main`, which closed the Story. `status` says `done`, and `inbox` shows no open run.
+  - What the run found, all fixed:
+    - **Validation:** a step outside a foreach couldn't read its own pull request's reviews. The `story` example's spec step didn't list them either.
+    - **Reviews and merges:** D61 and D62.
+    - **The wrong wiring:** D63.
+    - **Open Task items** after the run: D64.
+    - **Draft pull requests merged as drafts:** D65.
+  - Not changed, and logged: GitHub refuses a request for changes on one's own pull request, so with one account for people and agents only Comment reviews work. A conversation comment isn't read as feedback. See the backlog.
 - [ ] **R7. Docs** (fab0-dev/docs).
   - Rewrite explanation and reference for the toolkit: building blocks, operators, gates, branching, dependencies, artifact kinds, lifecycle, the tracker.
   - Add the how-to "Build your first factory" and a page on the examples.
@@ -607,7 +625,8 @@ Findings from 0.5 runs that still apply, and the step that takes them:
   - the reply schema accepts no `null`;
   - a scenario that no task delivers is a question, not a remark in the summary.
 - **R2c and R3b, from fab0-dev/fab0#20.** Writes outside every listed repository are reported, not only writes in the listed ones. *Done: D32, D48.*
-- **R6, from R3c.** Element items stay open after their units are done, because unit pull requests merge into the run branch and don't close them. The sandbox run decides how they close, for example with an action in the foreach's `onEnd` (P8).
+- **R6, from R3c.** Element items stay open after their units are done, because unit pull requests merge into the run branch and don't close them. The sandbox run decides how they close, for example with an action in the foreach's `onEnd` (P8). *Done in R6: D64.*
+- **Later, from R6.** With one GitHub account for people and agents, a person can't request changes on a unit's pull request, only leave a Comment review. Comment reviews count (D62). A conversation comment doesn't, though people reach for it first. Decide whether a unit's conversation comments are feedback, or whether a bot identity for agents (a GitHub App) is the answer, when a run needs it (P8).
 - **Later, from fab0-dev/docs#3.** The ledger reference is rewritten from the schema 2 ledger entry in R7, not patched.
 
 ## Baseline
@@ -637,3 +656,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R3b merged. R3c: the tracker's dependencies and signals (fab0-dev/fab0-core#27); D49–D51 made; R3 is done.
 - 14 Oct 2026, R3c merged. R4: session skills, `inbox`, the delivery parts out, an end-to-end check (fab0-dev/fab0-core#28); D52–D56 made.
 - 14 Oct 2026, R4 merged. `fab0-recipes` renamed `fab0-examples` with the owner's approval. R5: the `story` and `triage` examples, the marketplace, the merge guard, `check-examples` and `check-agents.py` (fab0-dev/fab0-examples#5, fab0-dev/fab0-core#29); D57–D60 made.
+- 14 Oct 2026, R5 merged. `fab0-dev/sandbox` created with the owner's approval. R6: the first real run passed every exit check (fab0-dev/fab0-core#30, fab0-dev/fab0-examples#6); D61–D65 made.
