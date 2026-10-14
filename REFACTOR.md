@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R2 done; R3a in review (fab0-dev/fab0-core#25). Next step: **R3b**.
+**Status:** R3a done; R3b in review (fab0-dev/fab0-core#26). Next step: **R3c**.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -350,6 +350,27 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
 
   *Made in R3a, 14 Oct 2026.*
 - **D44. `merge: auto` waits for the pull request's required checks.** A pending check leaves the unit waiting for the merge. A failing check is reported, and what follows a failing check is decided in R3b along with conflicts. *Made in R3a, 14 Oct 2026.*
+- **D45. Merge trouble goes back to the producer once.**
+  - A unit ready to merge whose branch conflicts with its parent, or whose required checks fail (completing D44), is reworked once, with the files or the checks in its brief. The ledger records why each attempt was made (`rework`).
+  - If the attempt made to fix it has the same trouble, a person decides.
+  - `apply` brings a reworked branch up to date when it merges cleanly. Otherwise the session merges and the agent resolves the markers.
+  - Claims are measured from the merge-base with the parent.
+
+  *Made in R3b, 14 Oct 2026.*
+- **D46. A unit is claimed by creating its branch.**
+  - `next` creates the branch with an empty commit naming who took it, and pushes it to `origin` create-only.
+  - A refused push means another machine has the unit, and it gets no hand-out.
+  - Without a remote, the local branch is the claim.
+  - This replaces assignment as the lock for agent work. Assignment still says whose turn a human gate is.
+
+  *Made in R3b, 14 Oct 2026.*
+- **D47. Claims hold across runs until the work is in the base.**
+  - Another open run's unit branches that aren't in their repository's base claim what their latest ledger entry says.
+  - An overlap warns, or blocks with `parallel.cross_run: block`.
+  - Claims across different projects stay open (P8).
+
+  *Made in R3b, 14 Oct 2026.*
+- **D48. Writes outside the repositories are reported where they can be seen.** `record` lists files that appeared or changed beside the repositories in the workspace's parent directory. Writes anywhere else can't be seen. This closes the #20 backlog item. *Made in R3b, 14 Oct 2026.*
 
 ## Steps
 
@@ -430,12 +451,18 @@ Each step has an exit check. A step is done when its check has passed, not when 
       - It gives units waiting on people a pull request, a draft until approved and never drafted again.
       - It posts questions and escalations once. A conflicting merge changes nothing.
       - Every action was applied twice on the fake with no change the second time. 150 tests pass (in parallel now) and ruff is clean.
-  - [ ] **R3b.** Conflicts and claims:
+  - [x] **R3b.** Conflicts and claims:
     - a merge that conflicts becomes rework for the unit, with the conflict in its brief, and escalates on a second conflict;
     - `apply` syncs a reworked unit's branch with its parent by merge;
     - pushing a unit's branch claims it, across machines;
     - claims across open runs (`parallel.cross_run`);
     - writes outside every repository of the workspace are reported (the rest of #20).
+    - *Result:* fab0-dev/fab0-core#26.
+      - Conflicts and failing checks rework a unit once, then escalate (D45). `apply` syncs a reworked branch when it merges cleanly.
+      - `next` claims units by pushing their branch create-only (D46).
+      - Claims of other open runs warn or block (D47).
+      - `record` reports files written beside the repositories (D48).
+      - `tests/test_conflicts.py` covers each, using a bare `origin` and a second clone. 157 tests pass and ruff is clean.
   - [ ] **R3c.** The tracker's dependencies:
     - blocked-by and sub-issue relations read as dependencies, with `blocked(tracker)` and `blocked(invalid-dependency)`;
     - `tracker.child.sync` projects `after` as blocked-by;
@@ -492,12 +519,12 @@ Each step has an exit check. A step is done when its check has passed, not when 
 
 Findings from 0.5 runs that still apply, and the step that takes them:
 
-- **R3, from fab0-dev/fab0#17.** A pull request's draft state changes only when its review changes. A person who marks an unreviewed draft ready keeps it ready on a repeated run.
+- **R3, from fab0-dev/fab0#17.** A pull request's draft state changes only when its review changes. A person who marks an unreviewed draft ready keeps it ready on a repeated run. *Done in R3a: D43.*
 - **R5, from fab0-dev/fab0#18.** The `story` implementer's reply means what it says:
   - leaving `questions` out, or returning it empty, is never an error;
   - the reply schema accepts no `null`;
   - a scenario that no task delivers is a question, not a remark in the summary.
-- **R2c and R3, from fab0-dev/fab0#20.** Writes outside every listed repository are reported, not only writes in the listed ones.
+- **R2c and R3b, from fab0-dev/fab0#20.** Writes outside every listed repository are reported, not only writes in the listed ones. *Done: D32, D48.*
 - **Later, from fab0-dev/docs#3.** The ledger reference is rewritten from the schema 2 ledger entry in R7, not patched.
 
 ## Baseline
@@ -523,3 +550,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R2c merged. R2d: auto gates, retry and escalation (fab0-dev/fab0-core#23); D33–D36 made.
 - 14 Oct 2026, R2d merged. R2e: lifecycle actions, action checks and triggers (fab0-dev/fab0-core#24); R2f needed no change; R2 complete; D37–D40 made.
 - 14 Oct 2026, R2e merged. R3 split into R3a–R3c. R3a: `apply` (fab0-dev/fab0-core#25); D28 made (D41); D42–D44 made; tests run in parallel.
+- 14 Oct 2026, R3a merged. R3b: conflicts, failing checks and claims (fab0-dev/fab0-core#26); D45–D48 made; the #17 and #20 backlog items are done.
