@@ -1,7 +1,0 @@
-# from fab0-dev/fab0-recipes story--v0.1.0
-artifact: spec
-format: markdown
-location: {repo: home, path: "specs/{run}.md"}
-verify:
-  - sections: [Intent, Scope, Scenarios, Constraints, Decisions, Open questions]
-keep: durable

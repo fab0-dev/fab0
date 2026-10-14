@@ -1,4 +1,0 @@
-# from fab0-dev/fab0-recipes story--v0.1.0
-artifact: intent
-format: markdown
-location: {github: issue-body}
