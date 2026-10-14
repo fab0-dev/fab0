@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R3a done; R3b in review (fab0-dev/fab0-core#26). Next step: **R3c**.
+**Status:** R3b done; R3c in review (fab0-dev/fab0-core#27), which finishes R3. Next step: **R4**.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -371,6 +371,17 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
 
   *Made in R3b, 14 Oct 2026.*
 - **D48. Writes outside the repositories are reported where they can be seen.** `record` lists files that appeared or changed beside the repositories in the workspace's parent directory. Writes anywhere else can't be seen. This closes the #20 backlog item. *Made in R3b, 14 Oct 2026.*
+- **D49. The tracker's relations, as the engine reads them.**
+  - A foreach element's item is the sub-issue that `tracker.child.sync` made for it, matched by title and type.
+  - Once that item exists, its blocked-by relations replace the element's `after` (P3). A blocker inside the run is an order dependency on that element. A blocker outside the run blocks with `tracker` until it closes.
+  - An `after` that names no element can't be projected, so it stays and is reported.
+  - Blocked-by on the run's own item holds back every unit of the run that isn't under way.
+  - The run item's sub-issues, other than its elements' items, hold back the pipeline's `onEnd`.
+  - Invalid, and reported as `invalid-dependency`: a cycle; an item blocked by its own run's item; a blocker closed as not planned; a blocker inside the run whose item was closed while its work isn't merged.
+  - Sub-issues of an element's item aren't read until a run needs them (P8).
+  - *Made in R3c, 14 Oct 2026.*
+- **D50. `after` is projected once.** `tracker.child.sync` adds blocked-by from `after` only for items it creates, both to and from the new item. It never re-adds a relation between items that already existed, so a relation a person removed stays removed. *Made in R3c, 14 Oct 2026.*
+- **D51. Signals go in one board field.** With `tracker.fields.signal` set, `apply` writes into that text field, for the run's item and each element's item, either `done` or the first unfinished unit and why. It writes only when the text changes, and the engine never reads the field back. Blocked-by relations are the other half of the projection. *Made in R3c, 14 Oct 2026.*
 
 ## Steps
 
@@ -443,7 +454,7 @@ Each step has an exit check. A step is done when its check has passed, not when 
     - pytest runs on the three fixtures and `ruff` is clean;
     - a search of the engine for `plan`, `deliver`, `tasks.json`, task ids, `traces_to` and `scenario` finds no delivery logic.
   - *Result:* passed on 14 Oct 2026 with R2e: 141 tests over the `story`, `docs` and `triage` fixtures, ruff clean, and the search finds nothing.
-- [ ] **R3. Git workflow and tracker** (fab0-core). One PR per sub-step.
+- [x] **R3. Git workflow and tracker** (fab0-core). One PR per sub-step.
   - [x] **R3a.** `apply` with the action catalogue (`git.*`, `pr.*` including `pr.merge` and its policy check, `tracker.*`), unit merges, unit pull requests, and #17.
     - *Result:* fab0-dev/fab0-core#25.
       - `apply` performs every action whose check fails.
@@ -463,14 +474,25 @@ Each step has an exit check. A step is done when its check has passed, not when 
       - Claims of other open runs warn or block (D47).
       - `record` reports files written beside the repositories (D48).
       - `tests/test_conflicts.py` covers each, using a bare `origin` and a second clone. 157 tests pass and ruff is clean.
-  - [ ] **R3c.** The tracker's dependencies:
+  - [x] **R3c.** The tracker's dependencies:
     - blocked-by and sub-issue relations read as dependencies, with `blocked(tracker)` and `blocked(invalid-dependency)`;
     - `tracker.child.sync` projects `after` as blocked-by;
     - blocking signals shown on the tracker.
+    - *Result:* fab0-dev/fab0-core#27.
+      - Blocked-by and sub-issues are read as D49 says.
+      - `after` is projected once (D50).
+      - The signal field is in place (D51).
+      - `when` conditions on board fields are decided now.
+      - `tests/test_dependencies.py` covers each. 165 tests pass and ruff is clean.
   - *Exit:*
     - every action passes on `GhFake`, twice in a row with no change the second time;
     - a simulated conflict between two units ends in rework, then escalation;
     - adding or removing a blocked-by on `GhFake` changes what `next` hands out.
+  - *Result:* passed on 14 Oct 2026, on the fixtures:
+    - `test_apply.py` applies every action twice;
+    - `test_conflicts.py` takes a conflict through rework to escalation;
+    - `test_a_blocked_by_on_the_board_changes_what_next_hands_out` adds and removes relations on the fake.
+    - The real `gh` write and relation paths are first exercised in R6.
 - [ ] **R4. Session skills** (fab0-core).
   - `/fab0:run` executes the four step kinds, runs ready units in parallel as subagents in their own worktrees, and calls `apply`.
   - `/fab0:inbox` shows units and their blocking signals.
@@ -525,6 +547,7 @@ Findings from 0.5 runs that still apply, and the step that takes them:
   - the reply schema accepts no `null`;
   - a scenario that no task delivers is a question, not a remark in the summary.
 - **R2c and R3b, from fab0-dev/fab0#20.** Writes outside every listed repository are reported, not only writes in the listed ones. *Done: D32, D48.*
+- **R6, from R3c.** Element items stay open after their units are done, because unit pull requests merge into the run branch and don't close them. The sandbox run decides how they close, for example with an action in the foreach's `onEnd` (P8).
 - **Later, from fab0-dev/docs#3.** The ledger reference is rewritten from the schema 2 ledger entry in R7, not patched.
 
 ## Baseline
@@ -551,3 +574,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R2d merged. R2e: lifecycle actions, action checks and triggers (fab0-dev/fab0-core#24); R2f needed no change; R2 complete; D37–D40 made.
 - 14 Oct 2026, R2e merged. R3 split into R3a–R3c. R3a: `apply` (fab0-dev/fab0-core#25); D28 made (D41); D42–D44 made; tests run in parallel.
 - 14 Oct 2026, R3a merged. R3b: conflicts, failing checks and claims (fab0-dev/fab0-core#26); D45–D48 made; the #17 and #20 backlog items are done.
+- 14 Oct 2026, R3b merged. R3c: the tracker's dependencies and signals (fab0-dev/fab0-core#27); D49–D51 made; R3 is done.
