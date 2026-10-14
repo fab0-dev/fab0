@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R1 done; R2a in review (fab0-dev/fab0-core#20). Next step: **R2b**.
+**Status:** R2a done; R2b in review (fab0-dev/fab0-core#21). Next step: **R2c**.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -297,6 +297,23 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
 
   *Made in R2a, 14 Oct 2026.*
 - **D22. Until they are built, the run commands refuse with exit 4 and name the step that builds them.** These are `next`, `record`, `status` (R2b), `apply` (R3) and `inbox` (R4). The 0.5 skills and agents in the plugin don't work with the engine until R4. *Made in R2a, 14 Oct 2026.*
+- **D23. A unit's id names its branch and its ledger files.**
+  - The id is `<step>[-<element>]`, prefixed with `<block>--` inside a gated block.
+  - A gated block's id is its `id`, or else `<kind>-<position>`.
+  - Branches come from `git.branches`, and ledger files are `<unit>-<attempt>.yaml`.
+
+  *Made in R2b, 14 Oct 2026.*
+- **D24. A hand-out names the worktree a unit works in.** That is the checkout that already has its branch, or else `<git-common-dir>/fab0/worktrees/<run>/<unit>`, where the session adds one. So parallel units in one repository never share a checkout, and `record` finds the unit's checkout through `git worktree list`. *Made in R2b, 14 Oct 2026.*
+- **D25. A unit's inputs are read at its parent branch's head.** The ledger entry pins that commit in `base`. When the parent doesn't exist yet, the hand-out lists the chain of branches to create, oldest first, and `base` is the commit they are cut from. *Made in R2b, 14 Oct 2026.*
+- **D26. Claims replace lanes.**
+  - A unit claims its `paths` in each repository it writes, or the whole repository when it declares none.
+  - Claims are taken in tree order, with `foreach` units in list order.
+  - A ready unit overlapping an earlier unit that isn't done waits.
+  - Units waiting on a gate keep their claims until merged.
+
+  *Made in R2b, 14 Oct 2026.*
+- **D27. A command step is recorded with its exit code.** A non-zero code blocks the unit (`failed`) until R2d's retry policy decides what follows. *Made in R2b, 14 Oct 2026; retry settled in R2d.*
+- **D28. A unit with gate `none` merges into its parent without a pull request.** `apply` merges it, so it waits in `waiting(merge)` until then. *Proposed; settle in R3.*
 
 ## Steps
 
@@ -330,7 +347,12 @@ Each step has an exit check. A step is done when its check has passed, not when 
       - Schema 2 replaced schema 1 in `plugins/fab0/schemas/`, and the fixtures moved to `tests/fixtures/{story,docs,triage}`.
       - `validate` passes on the three fixtures and refuses about 60 kinds of invalid wiring, each named. 95 tests pass and ruff is clean.
       - The PR carries a CI workflow patch that a person applies.
-  - [ ] **R2b.** The step kinds, sequence, `foreach`, `parallel` and `when`. Unit states, with every blocking reason except cross-run claims and tracker relations. Lanes, generalised from the 0.5 union-find to `paths` and `after`.
+  - [x] **R2b.** The step kinds, sequence, `foreach`, `parallel` and `when`. Unit states, with every blocking reason except cross-run claims and tracker relations. Lanes, generalised from the 0.5 union-find to `paths` and `after`.
+    - *Result:* fab0-dev/fab0-core#21.
+      - `status`, `next` and `record` work on schema 2.
+      - Units get the states `ready`, `running`, `waiting(merge|human|gate|questions)`, `blocked(order|data|claim|limit|invalid-dependency|condition|failed|start)` and `done`; gated blocks get `open`.
+      - Lanes became claims taken in tree order (D26).
+      - `tests/test_run.py` drives the three fixtures through real git repositories, including a gated parallel block with its own branch and a ledger-branch run. 107 tests pass and ruff is clean.
   - [ ] **R2c.** The artifact kinds and their hashers, the verify ladder, staleness pinned to the parent branch's SHA.
   - [ ] **R2d.** Gates with retry and escalation, and the core verdict.
   - [ ] **R2e.** Lifecycle actions, triggers, and the generic ledger with a configurable path.
@@ -422,3 +444,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R0. Architecture direction set; this guide written; base change and freeze PRs opened.
 - 14 Oct 2026, R0 merged. R1: D5–D8 made as proposed (D12); schema 2 and three fixture factories written (fab0-dev/fab0-core#19); D13–D19 recorded, D18 open for R2e.
 - 14 Oct 2026, R1 merged; D18 made (D20). R2a: engine package and schema 2 `validate` (fab0-dev/fab0-core#20); D21–D22 recorded; CI workflow patch left to a person.
+- 14 Oct 2026, R2a merged with the CI workflow patch. R2b: units, states, hand-outs and records (fab0-dev/fab0-core#21); D23–D27 made, D28 open for R3.
