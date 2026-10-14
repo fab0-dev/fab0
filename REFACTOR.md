@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R0 done; R1 in review (fab0-dev/fab0-core#19). Next step: **R2a**.
+**Status:** R1 done; R2a in review (fab0-dev/fab0-core#20). Next step: **R2b**.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -284,6 +284,19 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
 - **D17. The core verdict has no delivery fields.** `unmet` is gone. A factory's own review conventions go in `details`, which fab0 records and doesn't read. *Made in R1, 14 Oct 2026.*
 - **D18. Runs that open no pull request keep their ledger on a branch.** That branch (`ledger.branch`) is pushed and never merged, because the ledger must live in git (P3) and nothing may push to `main`. The alternative, ledger entries as tracker comments, would split the record. *Proposed; settle in R2e.*
 - **D19. Schema 2 sits beside schema 1 until R2a.** It lives in `plugins/fab0/schemas/v2/`, so the 0.5 resolver and its tests keep working. R2a moves schema 2 into `plugins/fab0/schemas/` and deletes schema 1. *Made in R1, 14 Oct 2026.*
+- **D20. D18 is made as written.** The owner chose the ledger branch in R2a. `validate` requires `ledger.branch` when no step of a pipeline writes files. *Made, 14 Oct 2026.*
+- **D21. `validate` refuses what the engine won't run yet:**
+  - `call`;
+  - pipeline `inputs` and `outputs`;
+  - `foreach` inside `foreach`.
+
+  It also refuses three things for good, because the model needs them:
+  - a step used twice in one pipeline, because its ledger names would collide;
+  - `after` outside a `parallel` block, because a sequence already orders its steps;
+  - a `{<step>.<field>}` template that doesn't point at an earlier agent or tool step.
+
+  *Made in R2a, 14 Oct 2026.*
+- **D22. Until they are built, the run commands refuse with exit 4 and name the step that builds them.** These are `next`, `record`, `status` (R2b), `apply` (R3) and `inbox` (R4). The 0.5 skills and agents in the plugin don't work with the engine until R4. *Made in R2a, 14 Oct 2026.*
 
 ## Steps
 
@@ -311,7 +324,12 @@ Each step has an exit check. A step is done when its check has passed, not when 
   - *Exit:* each fixture validates against the schemas with a plain JSON Schema validator, and every operator, gate option, artifact kind and branching mode appears in at least one of them.
   - *Result:* fab0-dev/fab0-core#19. Schema 2 is in `plugins/fab0/schemas/v2/`, the fixtures in `tests/fixtures/v2/{story,docs,triage}`. `tests/test_schema_v2.py` (19 tests) validates every fixture file and inline step with `jsonschema`, checks references resolve, checks that the fixtures together use every operator (`call` is reserved and excluded), gate option, artifact kind, executor, trigger and branching mode, and checks that 11 kinds of invalid wiring are refused. Full suite: 99 passed; ruff clean.
 - [ ] **R2. Engine core** (fab0-core). One PR per sub-step.
-  - [ ] **R2a.** The module split (D6). The schema 2 loader and `validate`, which refuses schema 1.
+  - [x] **R2a.** The module split (D6). The schema 2 loader and `validate`, which refuses schema 1.
+    - *Result:* fab0-dev/fab0-core#20.
+      - The engine is in `plugins/fab0/lib/fab0_engine/`, behind a `bin/fab0-resolve` shim.
+      - Schema 2 replaced schema 1 in `plugins/fab0/schemas/`, and the fixtures moved to `tests/fixtures/{story,docs,triage}`.
+      - `validate` passes on the three fixtures and refuses about 60 kinds of invalid wiring, each named. 95 tests pass and ruff is clean.
+      - The PR carries a CI workflow patch that a person applies.
   - [ ] **R2b.** The step kinds, sequence, `foreach`, `parallel` and `when`. Unit states, with every blocking reason except cross-run claims and tracker relations. Lanes, generalised from the 0.5 union-find to `paths` and `after`.
   - [ ] **R2c.** The artifact kinds and their hashers, the verify ladder, staleness pinned to the parent branch's SHA.
   - [ ] **R2d.** Gates with retry and escalation, and the core verdict.
@@ -403,3 +421,4 @@ Newest last. One line per session: date, step, what happened.
 
 - 14 Oct 2026, R0. Architecture direction set; this guide written; base change and freeze PRs opened.
 - 14 Oct 2026, R0 merged. R1: D5–D8 made as proposed (D12); schema 2 and three fixture factories written (fab0-dev/fab0-core#19); D13–D19 recorded, D18 open for R2e.
+- 14 Oct 2026, R1 merged; D18 made (D20). R2a: engine package and schema 2 `validate` (fab0-dev/fab0-core#20); D21–D22 recorded; CI workflow patch left to a person.
