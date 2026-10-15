@@ -1,0 +1,32 @@
+step: spec
+attempt: 1
+executor: agent
+actor: eugenefurs
+branch: fab0/44/spec
+model: opus
+base:
+  branch: fab0/44/base
+  sha: 7c4d87012e63bd36679c99849acea69a462424fb
+inputs:
+  intent: sha256:c92d9114419c853787a31fe33224644116ef3a7eb16f51682ff14d3f555e4d7d
+  reviews: sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+claims:
+- home:specs/44.md
+- home:work/44/tasks.yaml
+gate:
+  type: human
+summary: specs/44.md (roadmap step A.3) has 12 scenarios. When the engine's release
+  is older than the plugin Claude Code has installed for the project, every engine
+  command that reads the project refuses to run and writes nothing; it names both
+  releases, the orphaned cached versions to remove, and says to start a new session.
+  `--version`, a same or newer engine, and the cases where nothing can be checked
+  behave as today, with a warning only when the install record can't be read. T1 in
+  core does the check (read from `installed_plugins.json`, honouring `CLAUDE_CONFIG_DIR`,
+  local over project over user scope), the run and inbox skills and the tests; T2
+  in docs, after T1, documents updating the plugin and the refusal.
+outputs:
+  spec: sha256:0d6a02e1cb5a6b13ca6c440e581cb75e711eb4773ad5879dd03e3a88efb970fe
+  tasks: sha256:3a3435bd0491ffdc521a3cdbfe06aaf508163a9a7b3f80f82842baf1382c784b
+verify:
+  spec: pass
+  tasks: pass
