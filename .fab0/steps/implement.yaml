@@ -1,0 +1,9 @@
+# from fab0-dev/fab0-examples story--v0.2.0
+step: implement
+agent: implementer
+model: balanced
+inputs: [spec, tasks, unit, reviews]
+repos: {write: [unit.repo], read: [all]}
+paths: unit.paths
+return: {questions: optional}
+owner: repo-owner

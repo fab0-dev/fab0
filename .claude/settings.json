@@ -10,7 +10,7 @@
     }
   },
   "enabledPlugins": {
-    "fab0@fab0": false
+    "fab0@fab0": true
   },
   "permissions": {
     "deny": [
@@ -24,6 +24,19 @@
       "Bash(git push * main)",
       "Bash(git push * HEAD:main)",
       "Edit(/.github/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/merge-guard.py\""
+          }
+        ]
+      }
     ]
   }
 }

@@ -10,15 +10,15 @@ fab0 is a toolkit for building and operating software factories. A factory is on
 
 ## Status
 
-Pre-alpha, and being refactored. fab0 0.5 was a delivery factory with its own agents built in; it is being rebuilt as a toolkit, and its factories are frozen until the new version ships. The plan, the target model and the progress are in [REFACTOR.md](REFACTOR.md). The [docs](https://github.com/fab0-dev/docs) still describe 0.5 and are rewritten during the refactor.
+Pre-alpha. fab0 0.6 is the toolkit; 0.5 was a delivery factory with its own agents built in. The [docs](https://github.com/fab0-dev/docs/blob/main/docs/index.md) describe 0.6, and the [`story` and `triage` examples](https://github.com/fab0-dev/fab0-examples) are ready to copy. The rebuild is recorded in [REFACTOR.md](REFACTOR.md) until its last step ends.
 
 ## Repositories
 
-fab0 is built with a factory made from fab0. This repository is the home repo of the fab0 product. It holds the rules, the [refactor guide](REFACTOR.md) and, once the refactor is done, fab0's own factory. Code and documentation live in their own repositories:
+fab0 is built with a factory made from fab0. This repository is the home repo of the fab0 product. It holds the rules and fab0's own factory, copied from the `story` example, in `.fab0/`. Code and documentation live in their own repositories:
 
 | Repository | Contents |
 |---|---|
-| [`fab0-dev/fab0`](https://github.com/fab0-dev/fab0) | Home repo: this README, the rules, the refactor guide, and later fab0's own factory |
+| [`fab0-dev/fab0`](https://github.com/fab0-dev/fab0) | Home repo: this README, the rules, and fab0's own factory |
 | [`fab0-dev/fab0-core`](https://github.com/fab0-dev/fab0-core) | The `fab0` plugin marketplace and the core plugin: the engine, the schemas, the git and tracker utilities, and the skills fab0 itself needs |
 | [`fab0-dev/fab0-examples`](https://github.com/fab0-dev/fab0-examples) | Example factories to copy, with their agents and skills, also a plugin marketplace: `story` (delivery) and `triage` |
 | [`fab0-dev/docs`](https://github.com/fab0-dev/docs) | The user documentation |
@@ -32,7 +32,7 @@ Install the core plugin through Claude Code's plugin system:
 /plugin install fab0@fab0
 ```
 
-During the refactor, this repo's `.claude/settings.json` declares the `fab0` marketplace but keeps the plugin disabled, and the rest of this section applies again after the refactor. Normally the file declares the `fab0` marketplace, with auto-update, and enables the plugin. That declaration alone isn't enough for every client: the desktop app, for example, doesn't load a plugin that is enabled but not installed. Install it once for this repo, from the repo root:
+This repo's `.claude/settings.json` declares the `fab0` marketplace, with auto-update, and enables the plugin. That declaration alone isn't enough for every client: the desktop app, for example, doesn't load a plugin that is enabled but not installed. Install it once for this repo, from the repo root:
 
 ```bash
 claude plugin install fab0@fab0 --scope project
@@ -78,7 +78,7 @@ git checkout -- .claude/settings.json
 
 ### Requirements
 
-The resolver needs [`uv`](https://docs.astral.sh/uv/) and an authenticated [`gh`](https://cli.github.com/).
+The engine needs [`uv`](https://docs.astral.sh/uv/) and an authenticated [`gh`](https://cli.github.com/).
 
 ## Licence
 

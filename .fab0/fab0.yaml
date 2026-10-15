@@ -1,0 +1,30 @@
+# from fab0-dev/fab0-examples story--v0.2.0
+# fab0's own factory, copied from the story example: a Story becomes a spec and tasks across the
+# fab0 repositories, each implemented by an agent, reviewed by another and merged into the run branch;
+# the product owner merges the run into main.
+schema: 2
+repos:
+  home:     {path: ., github: fab0-dev/fab0, owner: product-owner}
+  core:     {path: ../fab0-core, github: fab0-dev/fab0-core, owner: developer}
+  examples: {path: ../fab0-examples, github: fab0-dev/fab0-examples, owner: developer}
+  docs:     {path: ../docs, github: fab0-dev/docs, owner: docs-owner}
+people:
+  product-owner: {github: [eugenefurs]}   # writes and approves specs; merges the run into main
+  developer:     {github: [eugenefurs]}   # decides escalated tasks in fab0-core and fab0-examples
+  docs-owner:    {github: [eugenefurs]}   # decides escalated docs tasks
+tracker:
+  kind: github
+  owner: fab0-dev
+  project: 1
+  fields: {signal: Waiting on}
+git:
+  base: main
+  branching: run
+  auto_merge: {into: [run]}
+parallel: {max: 3, cross_run: warn}
+ledger: {path: "work/{run}/ledger"}
+models:
+  claude-code: {deep: opus, balanced: sonnet, fast: haiku}
+profiles:
+  cheap: {models: {claude-code: {deep: sonnet, balanced: sonnet}}}
+pipelines: [story]

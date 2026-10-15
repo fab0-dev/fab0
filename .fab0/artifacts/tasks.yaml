@@ -1,0 +1,7 @@
+# from fab0-dev/fab0-examples story--v0.2.0
+artifact: tasks
+kind: file
+file: {repo: home, path: "work/{run}/tasks.yaml", format: yaml}
+schema: .fab0/schemas/tasks.json
+elements: {id: id, title: title, repo: repo, after: depends_on, paths: files}
+keep: run
