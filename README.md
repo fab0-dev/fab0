@@ -10,7 +10,7 @@ fab0 is a toolkit for building and operating software factories. A factory is on
 
 ## Status
 
-Pre-alpha. fab0 0.6 is the toolkit; 0.5 was a delivery factory with its own agents built in. The [docs](https://github.com/fab0-dev/docs/blob/main/docs/index.md) describe 0.6, and the [`story` and `triage` examples](https://github.com/fab0-dev/fab0-examples) are ready to copy. The rebuild is recorded in [REFACTOR.md](REFACTOR.md) until its last step ends.
+Pre-alpha. fab0 0.6 is the toolkit; 0.5 was a delivery factory with its own agents built in. The [docs](https://github.com/fab0-dev/docs/blob/main/docs/index.md) describe 0.6, and the [`story` and `triage` examples](https://github.com/fab0-dev/fab0-examples) are ready to copy. What comes next is in the [roadmap](ROADMAP.md), and why fab0 is built as it is, in [the decisions](DECISIONS.md).
 
 ## Repositories
 

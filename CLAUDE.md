@@ -2,13 +2,9 @@
 
 This is the home repo of the fab0 product. fab0 is a toolkit for building and operating software factories: principles, directives and tools, not a factory itself. fab0 is built with a factory made from fab0.
 
-## Status
-
-fab0 0.6 is released, and the refactor in [`REFACTOR.md`](REFACTOR.md) is in its last step, R8: a real Story here and a Docs issue in `fab0-dev/docs`, each delivered end to end by its factory. When R8 ends, `REFACTOR.md` gives way to `DECISIONS.md` (the decision log) and a rewritten `ROADMAP.md`.
-
 ## What this repo holds
 
-- the README, these rules, `REFACTOR.md` and `ROADMAP.md`;
+- the README, these rules, `ROADMAP.md` (the steps ahead, and their exit checks) and `DECISIONS.md` (why fab0 is built as it is; append only);
 - `.fab0/`: fab0's own factory, copied from the `story` example, and `.claude/`: its agents, its `spec-format` skill, the merge guard and the settings;
 - what its runs write: `specs/<run>.md`, and each run's ledger under `work/<run>/ledger/`.
 
