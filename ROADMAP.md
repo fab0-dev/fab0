@@ -20,6 +20,7 @@ Done since 0.5:
 - **A.1 First project other than fab0.** The `story` example copied into a project that isn't fab0, and one real Story run there. *Exit:* the Story is delivered, and every problem found is filed as a generic issue in the fab0 repository that owns the concern.
 - **A.2 Headless runs with a budget.** `/fab0:run` under `claude -p` with `dontAsk` and a budget, started by a trigger rather than a person. *Exit:* the cost of each unit is read from Claude Code's OpenTelemetry metrics and recorded with its ledger entry.
 - **A.3 Updates take effect.** After a plugin update, a new session can still run an older engine: Claude Code keeps an orphaned version's `bin/` on the `PATH` ahead of the new one (seen in R8). *Exit:* `/fab0:run` detects an engine older than the installed plugin and says how to fix it.
+  Done: Story #44, released in 0.6.4 (fab0-dev/fab0-core#40, fab0-dev/docs#21). The check protects updates from 0.6.4 on; an orphaned engine older than 0.6.4 has no check and still has to be removed by hand once.
 
 - **A.4 Escalations carry their findings.** After a person answers an escalated unit, the next attempt's brief has the person's feedback but not the gate's findings, which live only in fab0's own escalation comment (seen in R8). *Exit:* a reworked attempt after an escalation sees the gate's last findings in its brief.
 
