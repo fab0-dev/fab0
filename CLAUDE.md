@@ -2,32 +2,32 @@
 
 This is the home repo of the fab0 product. fab0 is a toolkit for building and operating software factories: principles, directives and tools, not a factory itself. fab0 is built with a factory made from fab0.
 
-## Refactor mode
+## Status
 
-fab0 is being refactored from a delivery factory into that toolkit. Until step R8 of [`REFACTOR.md`](REFACTOR.md):
-- `REFACTOR.md` is the plan, the tracker and the decision log. Read it before any change, and update it in the same PR as the step you do.
-- Work is done by hand in ordinary sessions. Don't use `/fab0:run` or `/fab0:inbox`: the 0.5 factories are broken against the coming core. The `fab0` plugin is disabled in `.claude/settings.json`.
-- `ROADMAP.md` is suspended.
-- The docs change in one step, R7, instead of with each change (working rule 1).
-- Exit checks before R6 run on fixtures; a real run ends the refactor (working rule 4).
+fab0 0.6 is released, and the refactor in [`REFACTOR.md`](REFACTOR.md) is in its last step, R8: a real Story here and a Docs issue in `fab0-dev/docs`, each delivered end to end by its factory. When R8 ends, `REFACTOR.md` gives way to `DECISIONS.md` (the decision log) and a rewritten `ROADMAP.md`.
 
 ## What this repo holds
 
-- the README, these rules and `REFACTOR.md`;
-- `.claude/settings.json`;
-- `ROADMAP.md`: the steps that build fab0 and their exit checks, suspended until R8;
-- after R8, `.fab0/` (fab0's own factory, copied from the `story` example) and what its runs write.
+- the README, these rules, `REFACTOR.md` and `ROADMAP.md`;
+- `.fab0/`: fab0's own factory, copied from the `story` example, and `.claude/`: its agents, its `spec-format` skill, the merge guard and the settings;
+- what its runs write: `specs/<run>.md`, and each run's ledger under `work/<run>/ledger/`.
 
 Code goes elsewhere:
 - the engine, the schemas, the action catalogue, the tracker adapters and the skills fab0 itself needs go in `fab0-dev/fab0-core`;
-- example factories, with their agents and skills, go in `fab0-dev/fab0-examples` (formerly `fab0-recipes`);
+- example factories, with their agents and skills, go in `fab0-dev/fab0-examples`;
 - the user documentation goes in `fab0-dev/docs`.
 
-The checkouts are siblings under one parent directory.
+The checkouts are siblings under one parent directory: the factory's `repos` point at them.
 
 ## Working on fab0 with fab0
 
-Suspended until R8. Afterwards, changes to fab0 start as a Story issue here and run with `/fab0:run <issue>` in a trusted Claude Code session, with the sibling checkouts in place.
+A change to fab0 starts as an issue of type **Story** here, and runs with `/fab0:run <issue>` in a trusted Claude Code session, with the sibling checkouts in place and this checkout on `main`:
+
+1. `spec-author` writes `specs/<run>.md` and the task list. The product owner reviews its pull request (a Comment review asks for changes) and merges it into the run branch.
+2. `apply` creates a Task sub-issue per task. Each task is implemented by `implementer` in its repository, reviewed by `reviewer`, and merged into that repository's run branch by `apply`. A task a gate hands over waits for a person.
+3. `onEnd` brings `main` in and marks each repository's run pull request ready. The product owner merges them into `main`.
+
+`/fab0:inbox` shows what waits on whom. Every task of a Story that changes behaviour includes the docs change in `fab0-dev/docs` (working rule 1).
 
 ## Working rules
 
@@ -37,9 +37,9 @@ Suspended until R8. Afterwards, changes to fab0 start as a Story issue here and 
 4. A step is done when its exit check has passed on a real run, not when its files exist.
 5. A problem found in a consuming project comes back as a generic issue in the fab0 repo that owns the concern. If it can't be written generically, it belongs to the project.
 
-`.claude/settings.json` declares the `fab0` marketplace (`fab0-dev/fab0-core`, auto-update), with the plugin disabled during the refactor. It denies merging PRs, force pushes, pushes to `main` and edits under `.github/`: people merge during the refactor. From R8, an `auto` gate may merge a reviewer-approved PR into a run branch, never into `main` unless a pipeline allows it; see `REFACTOR.md`, "Agent review and merge".
+`.claude/settings.json` declares the `fab0` marketplace (`fab0-dev/fab0-core`, auto-update) and enables the plugin. It denies the model merging pull requests, force pushes, pushes to `main` and edits under `.github/`, and the merge guard hook backs that up. Merges happen in two ways only: `apply` merges a task the reviewer approved into its run branch, within `git.auto_merge` (run branches only); and a person merges everything else, including every run into `main`.
 
-`guides/` is local seed material, superseded by `fab0-dev/docs` and `REFACTOR.md`. It is gitignored. Never cite it in a committed file.
+`guides/` is local seed material, superseded by `fab0-dev/docs`. It is gitignored. Never cite it in a committed file.
 
 ## Principles
 
