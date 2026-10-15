@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R5 done; R6 in review (fab0-dev/fab0-core#30, fab0-dev/fab0-examples#6). Next step: **R7**.
+**Status:** R6 done; R7 in review (fab0-dev/docs#6, fab0-dev/fab0-core#31). Next step: **R8**, the release.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -415,6 +415,10 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
 - **D63. The home checkout's wiring governs a run.** Called from inside a unit's worktree, the engine reads the main checkout's `.fab0/`, not the copy on the unit's branch. When the home checkout isn't on the base branch, `status`, `next` and `apply` warn, and `/fab0:run` stops to ask. In the sandbox, a checked-out pull request had silently run older wiring. *Made in R6, 14 Oct 2026.*
 - **D64. A foreach closes its elements' items with `tracker.child.close`, in its `onEnd`.** Unit pull requests merge into the run branch, which closes no issue. This closes the R6 backlog item from R3c. *Made in R6, 14 Oct 2026.*
 - **D65. `apply` marks an approved unit's pull request ready before it merges it,** so GitHub's record shows the gate passed (D43). *Made in R6, 14 Oct 2026.*
+- **D66. The docs describe fab0 0.6 from R7 on.** They are rewritten for the toolkit, not patched, and say so until R8 releases it. The only status marker is **Planned**, for what `validate` accepts or refuses but the engine doesn't run. *Made in R7, 15 Oct 2026.*
+- **D67. The reference is checked against the schemas, both ways, in CI.** `scripts/check-reference.py` in the docs repository uses only Python's standard library. Each property a schema defines must appear on its page, and each field a page lists in a `Field` table must exist in its schemas. Until R8, CI reads the schemas from fab0-core's `main`. *Made in R7, 15 Oct 2026.*
+- **D68. `pr.merge` obeys the merge policy.** `validate` refuses it unless `git.auto_merge` has `into: [base]` and `allow_base: true`, and `apply` checks again. Before, it merged the run into the base branch with no check, unlike unit merges. *Made in R7, 15 Oct 2026.*
+- **D69. A claim another machine pushed holds once fetched.** A first attempt whose branch exists, with no hand-out on this machine, is taken (D46). Before, a machine that had fetched another machine's claim handed the unit out again. *Made in R7, 15 Oct 2026.*
 
 ## Steps
 
@@ -599,13 +603,27 @@ Each step has an exit check. A step is done when its check has passed, not when 
     - **Open Task items** after the run: D64.
     - **Draft pull requests merged as drafts:** D65.
   - Not changed, and logged: GitHub refuses a request for changes on one's own pull request, so with one account for people and agents only Comment reviews work. A conversation comment isn't read as feedback. See the backlog.
-- [ ] **R7. Docs** (fab0-dev/docs).
+- [x] **R7. Docs** (fab0-dev/docs).
   - Rewrite explanation and reference for the toolkit: building blocks, operators, gates, branching, dependencies, artifact kinds, lifecycle, the tracker.
   - Add the how-to "Build your first factory" and a page on the examples.
   - Rebuild the docs factory on schema 2 (D9).
   - *Exit:*
     - the docs checks pass in CI;
     - every reference field matches the schema 2 files.
+  - *Result:* fab0-dev/docs#6 and fab0-dev/fab0-core#31, 15 Oct 2026.
+    - The pages are rewritten for 0.6 (D66):
+      - explanation: what fab0 is, pipelines and steps, gates, branches and merges, dependencies and blocking, artifacts and the ledger, running a pipeline, the tracker, examples;
+      - how-to: build your first factory (its files validated with the engine), use an example, set up GitHub;
+      - reference: one page per schema file, plus actions and commands.
+    - The docs factory is rebuilt on schema 2 (D9), on the `story` pattern. Its agents, skill and evals are updated, and the plugin stays disabled until R8.
+    - An independent agent checked every page's claims against the engine. Its 16 findings were fixed: 15 in the pages, and one in the engine (D69).
+    - Writing the reference found two more engine gaps, now fixed:
+      - `issue` artifacts with a board `field`, or `of: unit`, had never been built (left over from R3);
+      - `pr.merge` skipped the merge policy (D68).
+    - Exit:
+      - docs CI passes: lint, spelling, offline links, and the field check (D67) against fab0-core;
+      - `fab0-resolve validate` passes for the docs factory;
+      - fab0-core has 180 tests, and ruff is clean.
 - [ ] **R8. Release, and back to the factory.**
   - Release `fab0--v0.6.0`.
   - Copy the `story` example into this repository as fab0's factory, and enable the plugin again.
@@ -657,3 +675,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R3c merged. R4: session skills, `inbox`, the delivery parts out, an end-to-end check (fab0-dev/fab0-core#28); D52–D56 made.
 - 14 Oct 2026, R4 merged. `fab0-recipes` renamed `fab0-examples` with the owner's approval. R5: the `story` and `triage` examples, the marketplace, the merge guard, `check-examples` and `check-agents.py` (fab0-dev/fab0-examples#5, fab0-dev/fab0-core#29); D57–D60 made.
 - 14 Oct 2026, R5 merged. `fab0-dev/sandbox` created with the owner's approval. R6: the first real run passed every exit check (fab0-dev/fab0-core#30, fab0-dev/fab0-examples#6); D61–D65 made.
+- 15 Oct 2026, R6 merged. R7: the docs for the toolkit, the docs factory on schema 2, and three engine fixes the docs turned up (fab0-dev/docs#6, fab0-dev/fab0-core#31); D66–D69 made.
