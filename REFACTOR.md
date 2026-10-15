@@ -1,6 +1,6 @@
 # Refactor: fab0 as a toolkit for building software factories
 
-**Status:** R6 done; R7 in review (fab0-dev/docs#6, fab0-dev/fab0-core#31). Next step: **R8**, the release.
+**Status:** done. fab0 0.6 is released, and fab0 and its docs are built by their own factories again. This guide is removed in the same pull request as this result; the decisions continue in `DECISIONS.md`, and the next steps are in `ROADMAP.md`.
 
 This guide governs all work on fab0 until the refactor is done. It replaces `ROADMAP.md` and the "Working on fab0 with fab0" flow in `CLAUDE.md` until step R8. Sessions read it, do one step and edit it in the same pull request.
 
@@ -419,6 +419,10 @@ Append only. *Made* decisions are settled; *proposed* ones are settled at the st
 - **D67. The reference is checked against the schemas, both ways, in CI.** `scripts/check-reference.py` in the docs repository uses only Python's standard library. Each property a schema defines must appear on its page, and each field a page lists in a `Field` table must exist in its schemas. Until R8, CI reads the schemas from fab0-core's `main`. *Made in R7, 15 Oct 2026.*
 - **D68. `pr.merge` obeys the merge policy.** `validate` refuses it unless `git.auto_merge` has `into: [base]` and `allow_base: true`, and `apply` checks again. Before, it merged the run into the base branch with no check, unlike unit merges. *Made in R7, 15 Oct 2026.*
 - **D69. A claim another machine pushed holds once fetched.** A first attempt whose branch exists, with no hand-out on this machine, is taken (D46). Before, a machine that had fetched another machine's claim handed the unit out again. *Made in R7, 15 Oct 2026.*
+- **D70. Fixes that real runs find ship at once, as patch releases.** The factories run the released plugin, and the docs describe the latest release. So R8's fixes went out as 0.6.1, 0.6.2 and 0.6.3, each found by a run and each with a test. *Made in R8, 15 Oct 2026.*
+- **D71. Only a person merges into the base branch, unless the policy allows it, for every kind of merge.** That includes gate `none` and label-decided units under flat branching (0.6.1), and completes D68. *Made in R8, 15 Oct 2026.*
+- **D72. A person's conversation comments on a unit's pull request count as feedback, like Comment reviews.** fab0's own comments don't count, and comments stop counting once the unit is merged. This settles the R6 backlog item. It was delivered by fab0's own factory as Story fab0-dev/fab0#36, and released in 0.6.2. *Made in R8, 15 Oct 2026.*
+- **D73. The decision log moves to `DECISIONS.md`, and this guide is removed when R8 ends.** The engine cites decisions by number, so they need a lasting home. Git history keeps this guide. *Made in R8, 15 Oct 2026.*
 
 ## Steps
 
@@ -624,7 +628,7 @@ Each step has an exit check. A step is done when its check has passed, not when 
       - docs CI passes: lint, spelling, offline links, and the field check (D67) against fab0-core;
       - `fab0-resolve validate` passes for the docs factory;
       - fab0-core has 180 tests, and ruff is clean.
-- [ ] **R8. Release, and back to the factory.**
+- [x] **R8. Release, and back to the factory.**
   - Release `fab0--v0.6.0`.
   - Copy the `story` example into this repository as fab0's factory, and enable the plugin again.
   - Restore the "Working on fab0 with fab0" flow in `CLAUDE.md`, with the new merge rule.
@@ -632,6 +636,23 @@ Each step has an exit check. A step is done when its check has passed, not when 
     - a real Story here is delivered end to end;
     - a Docs issue in fab0-dev/docs is delivered end to end.
   - Then rewrite `ROADMAP.md` from what remains (the 0.5 roadmap's A.5, A.6 and B steps), and delete this guide.
+  - *Result:* passed on 15 Oct 2026.
+    - **The release.** fab0 0.6.0 (fab0-dev/fab0-core#32) was tagged `fab0--v0.6.0`. The examples were tagged `story--v0.2.0` and `triage--v0.1.0`, and the examples' and docs' CI follow the release (fab0-dev/fab0-examples#7, fab0-dev/docs#7).
+    - **fab0's own factory**, from the `story` example, with the plugin enabled again (fab0-dev/fab0#35).
+    - **The Story run.** fab0-dev/fab0#36, "Conversation comments on a unit's pull request count as feedback" (D72), was delivered end to end for about $3.15:
+      - the spec (#38) was approved by the owner;
+      - three tasks in fab0-core, docs and fab0-examples, two of them rejected once and fixed, were reviewed and merged into their run branches by agents;
+      - the Task items were closed;
+      - the owner merged the four run pull requests into `main`.
+    - **The Docs run.** fab0-dev/docs#8, a how-to for choosing how a pipeline uses git, was delivered end to end for about $9.30:
+      - the planner asked a question that exposed a merge into the base branch with no policy check, fixed first (0.6.1, D71);
+      - the reviewer escalated over two engine gaps, fixed in 0.6.2: label-decided gates never merged, and `validate` and `apply` disagreed inside gated blocks;
+      - a sync merged `main` into run branches with no work, fixed in 0.6.3;
+      - three pages were written, reviewed and merged, and the owner merged the run into `main`.
+    - **What else the runs showed:**
+      - a reviewer switched a person's checkout to run tests, so gate briefs now name the unit's worktree (0.6.2);
+      - Claude Code kept an orphaned older plugin version on the `PATH` ahead of the new one after an update (`ROADMAP.md`, A.3);
+      - after a person answers an escalation, the next attempt's brief carries the person's feedback but not the gate's findings (`ROADMAP.md`, A.4).
 
 ## Backlog
 
@@ -644,7 +665,7 @@ Findings from 0.5 runs that still apply, and the step that takes them:
   - a scenario that no task delivers is a question, not a remark in the summary.
 - **R2c and R3b, from fab0-dev/fab0#20.** Writes outside every listed repository are reported, not only writes in the listed ones. *Done: D32, D48.*
 - **R6, from R3c.** Element items stay open after their units are done, because unit pull requests merge into the run branch and don't close them. The sandbox run decides how they close, for example with an action in the foreach's `onEnd` (P8). *Done in R6: D64.*
-- **Later, from R6.** With one GitHub account for people and agents, a person can't request changes on a unit's pull request, only leave a Comment review. Comment reviews count (D62). A conversation comment doesn't, though people reach for it first. Decide whether a unit's conversation comments are feedback, or whether a bot identity for agents (a GitHub App) is the answer, when a run needs it (P8).
+- **Done in R8 (D72), from R6.** With one GitHub account for people and agents, a person can't request changes on a unit's pull request, only leave a Comment review. Comment reviews count (D62). A conversation comment doesn't, though people reach for it first. Decide whether a unit's conversation comments are feedback, or whether a bot identity for agents (a GitHub App) is the answer, when a run needs it (P8).
 - **Later, from fab0-dev/docs#3.** The ledger reference is rewritten from the schema 2 ledger entry in R7, not patched.
 
 ## Baseline
@@ -676,3 +697,4 @@ Newest last. One line per session: date, step, what happened.
 - 14 Oct 2026, R4 merged. `fab0-recipes` renamed `fab0-examples` with the owner's approval. R5: the `story` and `triage` examples, the marketplace, the merge guard, `check-examples` and `check-agents.py` (fab0-dev/fab0-examples#5, fab0-dev/fab0-core#29); D57–D60 made.
 - 14 Oct 2026, R5 merged. `fab0-dev/sandbox` created with the owner's approval. R6: the first real run passed every exit check (fab0-dev/fab0-core#30, fab0-dev/fab0-examples#6); D61–D65 made.
 - 15 Oct 2026, R6 merged. R7: the docs for the toolkit, the docs factory on schema 2, and three engine fixes the docs turned up (fab0-dev/docs#6, fab0-dev/fab0-core#31); D66–D69 made.
+- 15 Oct 2026, R7 merged. R8: fab0 0.6.0 to 0.6.3 released; fab0's own factory delivered Story fab0-dev/fab0#36, and the docs factory delivered fab0-dev/docs#8; D70–D73 made. The refactor is done.
