@@ -1,0 +1,25 @@
+- id: T1
+  title: The reviews part of a pull request includes people's conversation comments, oldest first
+  repo: core
+  files:
+    - plugins/fab0/lib/fab0_engine/tracker.py
+    - plugins/fab0/lib/fab0_engine/artifacts.py
+    - tests/test_rework.py
+  scenarios: [S1, S2, S3, S4, S5, S6, S7]
+- id: T2
+  title: The docs say a person's conversation comments count as feedback
+  repo: docs
+  files:
+    - docs/explanation/gates.md
+    - docs/explanation/tracker.md
+    - docs/explanation/artifacts-and-ledger.md
+    - docs/reference/artifact.md
+  depends_on: [T1]
+  scenarios: [S8]
+- id: T3
+  title: The story README tells the product owner a conversation comment reaches the agent
+  repo: examples
+  files:
+    - story/README.md
+  depends_on: [T1]
+  scenarios: [S9]
