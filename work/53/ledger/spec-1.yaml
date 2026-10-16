@@ -1,0 +1,36 @@
+step: spec
+attempt: 1
+executor: agent
+actor: eugenefurs
+branch: fab0/53/spec
+model: opus
+base:
+  branch: fab0/53/base
+  sha: 7f4a7958db187368ed29f389e638494cb61aaf6e
+inputs:
+  intent: sha256:f29eb96ac7cf34c96b3322610458bf47e2dc3c3f72ab41eb8a1b44a1b7122182
+  reviews: sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+claims:
+- home:specs/53.md
+- home:work/53/tasks.yaml
+gate:
+  type: human
+summary: 'The spec (specs/53.md) has 14 scenarios for keeping the person informed
+  during a run. Before each round there is a start line per hand-out, with the unit,
+  its agent, command or tool, the model, the attempt and the branch. The agents''
+  activity shows while they run in parallel, and each recorded unit or gate gets an
+  end line with its outcome and duration. After each apply the session lists what
+  it did, and the end report gives each unit''s duration. The ledger keeps `started`
+  and `ended` so status can report durations later, and the spec covers refused and
+  repeated records, entries without times, and the docs. The work splits into four
+  tasks: T1 (core) adds the start lines, the times and end lines from record, and
+  the new ledger fields; T2 (core) makes status give each unit''s total duration;
+  T3 (core) updates the /fab0:run skill so the agents run in the foreground, together,
+  and the engine''s lines are shown; T4 (docs) updates the pages on running a pipeline,
+  the ledger and the commands.'
+outputs:
+  spec: sha256:138f8a7481c2aa94e3c4c44cc3114339b6acc3e39c2063b17fbcf0543405cdf3
+  tasks: sha256:c21abe24d4e6597169dac60d85541ead93ee246b829f131cd1ac0a40cb1756db
+verify:
+  spec: pass
+  tasks: pass
