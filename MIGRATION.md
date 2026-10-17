@@ -1,6 +1,6 @@
 # Migration: the run store (fab0 0.6 → 0.7)
 
-**Status:** M4 in review. M2's end-to-end check is still to run. Next step: **M5**.
+**Status:** M4 and M5 in review. Next step: **M6**.
 
 This guide governs the work on fab0 until 0.7 is released and has passed a real run. Sessions read it, do one step and edit it in the same pull request. It takes precedence over `ROADMAP.md` until step M9 is done, and it is removed then, as `REFACTOR.md` was. Git history keeps it.
 
@@ -140,7 +140,7 @@ They are recorded in `DECISIONS.md` by the step that implements them.
 
   *Result:* fab0-dev/fab0-core#58. `uv run pytest -q` passes: 372 passed and 1 xfailed (the xfail was already there). Ruff and the fixtures' `validate` pass too. `tests/test_store.py` covers each point of the exit check. It also shows that the loser of a fact race still pushes its other writes, that 8 threads writing into one clone lose nothing, that an empty remote takes the first push, and that two projects share one runs repository. Decision D74.
 
-- [ ] **M2. The ledger in the store (fab0-core).**
+- [x] **M2. The ledger in the store (fab0-core).**
   - Writes:
     - `handout.record` and `gates.record_gate` append facts.
     - `record` commits the product changes and records `heads`.
@@ -164,7 +164,7 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   *Result so far:* fab0-dev/fab0-core#59.
   - `uv run pytest -q` passes: 375 passed and 1 xfailed (the xfail was already there). Ruff and the fixtures' `validate` pass too.
   - Three tests cover the exit check: `test_the_ledger_stays_out_of_the_product_repositories` (no ledger file on any branch, and no gate commit), `test_a_run_without_files_records_into_the_run_store` and `test_a_squash_merged_unit_is_done`.
-  - `scripts/e2e-triage.py` is updated but not run yet, because it costs tokens. The box is ticked once it passes.
+  - `scripts/e2e-triage.py` passed in M5, after a fix to the script itself (see M5), so the box is ticked.
 
   Found while doing it, now part of the step:
   - A unit that writes no repository, such as a command check, still works on a branch of the home repo, because it must read its parent's state. It just records no `heads`. M4 decides whether a detached checkout can replace that branch.
@@ -239,12 +239,23 @@ They are recorded in `DECISIONS.md` by the step that implements them.
 
   Decisions D81 and D82.
 
-- [ ] **M5. Skills and setup (fab0-core).**
+- [x] **M5. Skills and setup (fab0-core).**
   - `/fab0:run` and `/fab0:inbox` follow the store.
   - The `fab0:github` skill checks the runs repository and creates it on request: private, the ruleset, write access for the project's people.
   - `validate` checks that the store is reachable.
 
   *Exit:* `validate` passes on every fixture, and `scripts/e2e-triage.py` passes.
+
+  *Result:* fab0-dev/fab0-core#63.
+  - `validate` passes on the three fixtures. `uv run pytest -q` passes: 392 passed and 1 xfailed. Ruff and `claude plugin validate --strict plugins/fab0` pass too.
+  - `scripts/e2e-triage.py` passes all 15 checks, for $0.20 over two sessions. It now also checks that `classify` was claimed in the run store, and that the product repository has no commit that changes nothing.
+  - `validate` reaches the store with `git ls-remote`, through its clone's remote or else `store.github`, and an unreachable store is invalid wiring. New tests cover a reachable and an unreachable store, one with no checkout yet, and a folder that isn't a repository. The tests send `https://github.com/` to a local folder, so none reaches GitHub.
+  - Found while doing it, now part of the step:
+    - The e2e script had never run since M2. An installed fab0 plugin's `bin` came before `--plugin-dir`'s on the session's PATH, so the session ran the released 0.6.5 engine. The script now puts the engine under test first.
+    - `/fab0:inbox` listed units another machine claimed as ready to run. They now wait on that machine.
+  - Left open: the inbox evaluates every run the store holds, finished ones included. No cheap signal tells a finished run from an open one, since a triage run's onStart removes its trigger label, and nobody runs `apply` after a person merges a run's pull requests. It stays until a run needs it (P8).
+
+  Decision D83.
 
 - [ ] **M6. The examples (fab0-examples).**
   - `story`:

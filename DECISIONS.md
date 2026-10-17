@@ -208,3 +208,9 @@ Append only. To reverse a decision, add a new one that names the one it replaces
   - A unit with no pull request says its questions or escalation on the run's item.
 
   *Made in M4, 17 Oct 2026.*
+- **D83. `validate` checks that the run store is reachable, and the `fab0:github` skill sets the runs repository up.**
+  - `validate` runs `git ls-remote` through the store's clone, or else `store.github`, with no credential prompt. An unreachable store is invalid wiring that points at the skill. A local store, or one whose checkout the first write will start, passes.
+  - The skill checks the runs repository and creates it only on request: private, with a ruleset that blocks force pushes to `main` and its deletion, and write access for the project's people.
+  - `/fab0:run` and `/fab0:inbox` describe the store: claims, review pull requests, and units another machine took.
+
+  *Made in M5, 17 Oct 2026.*
