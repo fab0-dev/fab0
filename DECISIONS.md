@@ -194,3 +194,17 @@ Append only. To reverse a decision, add a new one that names the one it replaces
   - A person's commit on the branch that changes the outputs is recorded as the next attempt, by that person (`executor: person`), and checked like any output.
 
   *Made in M3b, 17 Oct 2026.*
+- **D81. A claim is a fact in the run store, and a unit's branch starts with no commit.**
+  - `next` appends `<unit>-<attempt>-claim` (the actor, the checkout's id, the time) and pushes it before the hand-out. The first claim pushed stands. A checkout whose claim lost, or that finds another checkout's, doesn't hand the unit out, and `status` shows it `running` (`claimed: elsewhere`). Every attempt is claimed, reworks included.
+  - The unit's branch is created from its parent's head with no commit. `record` pushes it once it has commits, and `apply` pushes before it merges or opens a pull request. `heads` is again the branch's commits that its parent lacked at the hand-out.
+  - A unit that writes no repository keeps a local branch with no commit, rather than a detached checkout. Nothing pushes such a branch, and it never gets a pull request.
+  - This replaces D46 and D69.
+
+  *Made in M4, 17 Oct 2026.*
+- **D82. A run pull request opens only where the run changed something.**
+  - `pr.open-run` opens one in a repository whose run branch is ahead of the base, so no start commit is made. That replaces D43's empty start commit.
+  - `apply` checks `pr.open-run` again after its last round, so a run branch that gets work during the run gets its pull request then. One a person closed stays closed until `pr.ready`.
+  - Every run pull request closes the run's item.
+  - A unit with no pull request says its questions or escalation on the run's item.
+
+  *Made in M4, 17 Oct 2026.*

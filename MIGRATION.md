@@ -1,6 +1,6 @@
 # Migration: the run store (fab0 0.6 → 0.7)
 
-**Status:** M3a and M3b in review. M2's end-to-end check is still to run. Next step: **M4**.
+**Status:** M4 in review. M2's end-to-end check is still to run. Next step: **M5**.
 
 This guide governs the work on fab0 until 0.7 is released and has passed a real run. Sessions read it, do one step and edit it in the same pull request. It takes precedence over `ROADMAP.md` until step M9 is done, and it is removed then, as `REFACTOR.md` was. Git history keeps it.
 
@@ -216,7 +216,7 @@ They are recorded in `DECISIONS.md` by the step that implements them.
 
   Decision D80.
 
-- [ ] **M4. No empty commits or pull requests (fab0-core).**
+- [x] **M4. No empty commits or pull requests (fab0-core).**
   - Claims: a claim is a create-only claim fact, pushed before the hand-out. The unit branch is created from the parent head, and pushed by the first `record` or by `apply`. With no claim commit, `heads` can go back to "the branch has commits its parent lacks" (M2).
   - A unit that writes no repository: decide whether it reads its parent from a detached checkout instead of a branch (M2).
   - `git.run-branch` makes no commit. `pr.open-run` waits until the run branch is ahead of the base. Every run pull request closes the run's item.
@@ -224,6 +224,20 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   *Exit:*
   - in a fixture run that reads one repository without writing it, no product repository has an empty commit, and the read-only one gets no pull request;
   - two clones racing for one unit give one hand-out.
+
+  *Result:* fab0-dev/fab0-core#62.
+  - `uv run pytest -q` passes: 389 passed and 1 xfailed. Ruff, `claude plugin validate --strict plugins/fab0` and the fixtures' `validate` pass too.
+  - `tests/test_empty.py` covers the exit check:
+    - `test_a_run_that_only_reads_a_repository_leaves_no_trace_in_it`: the story fixture, with its spec and task list in the store and its one task in the backend, runs to its end through `apply`. No product repository has a commit that changes nothing, home's run branch stays at `main`, and home gets no pull request. The backend's run pull request closes the run's item.
+    - `test_two_clones_racing_for_one_unit_give_one_hand_out`: two machines run `next` at once, and one hand-out results (5 runs out of 5). `test_a_claim_pushed_first_elsewhere_wins_over_one_written_here` covers the narrow race, where a clone that hasn't seen the other's claim loses at the push.
+  - Two mutations each fail a test: a claim that always wins, and run pull requests opened without work.
+  - Decided: a unit that writes no repository keeps a local branch with no commit. A detached checkout would change the session's checkout steps for nothing this step needs.
+  - Found while doing it, now part of the step:
+    - Every attempt is claimed, reworks included.
+    - `pr.open-run` is checked again by `apply` after its last round, since a run branch gets work only after the run starts. Only `apply` reads for it, so `status`, `next` and `inbox` read no more than before.
+    - A unit whose attempt changed nothing has no pull request now, so its questions or escalation go on the run's item.
+
+  Decisions D81 and D82.
 
 - [ ] **M5. Skills and setup (fab0-core).**
   - `/fab0:run` and `/fab0:inbox` follow the store.
