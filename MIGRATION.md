@@ -1,6 +1,6 @@
 # Migration: the run store (fab0 0.6 → 0.7)
 
-**Status:** M3a in review. M2's end-to-end check is still to run. Next step: **M3b**.
+**Status:** M3a and M3b in review. M2's end-to-end check is still to run. Next step: **M4**.
 
 This guide governs the work on fab0 until 0.7 is released and has passed a real run. Sessions read it, do one step and edit it in the same pull request. It takes precedence over `ROADMAP.md` until step M9 is done, and it is removed then, as `REFACTOR.md` was. Git history keeps it.
 
@@ -191,7 +191,7 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   - The fixtures' task lists are store artifacts. Their specs stay `kind: file` until M3b gives a store-only human gate a review surface.
   - Found while doing it: a store artifact has one latest version per run, not one per branch. A new version is seen at once by every unit that reads it, wherever it works. Decision D79.
 
-- [ ] **M3b. Review pull requests.**
+- [x] **M3b. Review pull requests.**
   - Review pull requests, as in the target model, including the owner check and a person's edits. A `pr` artifact of the unit resolves to its review pull request.
 
   *Exit:* in a fixture story run with the spec and the task list in the store:
@@ -200,6 +200,21 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   - a merge by a non-owner is reported, and a merge by the owner passes the gate;
   - a person's edit on the branch is recorded as an attempt;
   - the product repos receive only the implementation's changes.
+
+  *Result:* fab0-dev/fab0-core#61.
+  - `uv run pytest -q` passes: 386 passed and 1 xfailed. Ruff and the fixtures' `validate` pass too.
+  - `tests/test_review.py` covers the exit check. Its tests switch the story fixture's spec to `kind: store`, give the store `github`, and give the spec step `reviews` as an input:
+    - `test_a_store_only_unit_is_reviewed_in_a_pull_request_of_the_runs_repository` covers the first, second, fourth and fifth points. The review pull request opens in the runs fixture. A Comment review brings attempt 2, with the review in its brief. A person's commit is recorded once, as attempt 3 by that person, and the next step reads that version. `git log --all --name-only` shows nothing of the run in the home repository, and only the implementation's file in the other one.
+    - `test_only_the_gates_owner_approves_by_merging` covers the third point.
+    - `test_a_merge_of_an_older_attempt_doesnt_pass_the_newer_one` covers a merge at an older attempt.
+  - Two mutations each fail a test: an owner check that always passes, and edits that are never seen.
+  - The fixtures keep their spec `kind: file`; the examples switch in M6. `scripts/e2e-triage.py` was not run.
+  - Found while doing it, now part of the step:
+    - Only a step that writes no repository is reviewed in the runs repository. A human-gated step that writes one keeps its product pull request.
+    - A merge by someone outside the owner role would otherwise leave the run stuck. An owner's approving review on that pull request now passes the gate.
+    - A rework brief shows a store output's latest version, since it is on no branch to build on.
+
+  Decision D80.
 
 - [ ] **M4. No empty commits or pull requests (fab0-core).**
   - Claims: a claim is a create-only claim fact, pushed before the hand-out. The unit branch is created from the parent head, and pushed by the first `record` or by `apply`. With no claim commit, `heads` can go back to "the branch has commits its parent lacks" (M2).

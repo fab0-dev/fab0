@@ -186,3 +186,11 @@ Append only. To reverse a decision, add a new one that names the one it replaces
   - Where each artifact lives is the factory's choice: a spec may be `kind: file` (kept in a repository) or `kind: store` (reviewed per run, and compacted later by a step of the factory's own).
 
   *Made in M3a, 17 Oct 2026.*
+- **D80. A unit whose outputs are all in the store is reviewed in a pull request of the runs repository.**
+  - It applies to a step with a `human` gate decided by a pull request, whose outputs are all `kind: store`, and which writes no repository. `validate` asks for `store.github` for one. A human-gated step that writes a repository keeps its product pull request.
+  - `apply` puts the latest attempt's outputs in `runs/<project>/<run>/review/<unit>/` on the branch `fab0/<project>/<run>/<unit>`, one commit per attempt, and opens the pull request into the store's `main`. The branch is one per unit. Nothing is force-pushed, and the store's checkout never moves.
+  - The unit's own `pr` artifact is that pull request, so its reviews and people's comments feed the next attempt (D62, D72).
+  - The merge is the approval only when the person who merged is in the gate's owner role, and only for the latest attempt's outputs. A merge by anyone else is said on the pull request, and an owner's approving review there then passes the gate.
+  - A person's commit on the branch that changes the outputs is recorded as the next attempt, by that person (`executor: person`), and checked like any output.
+
+  *Made in M3b, 17 Oct 2026.*
