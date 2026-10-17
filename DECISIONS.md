@@ -179,3 +179,18 @@ Append only. To reverse a decision, add a new one that names the one it replaces
 - **D76. There is no ledger branch.** A run that writes no files records in the run store like any other, so `ledger.branch` and its `validate` rule go. This replaces D18, D20 and D55's ledger-branch trace: `inbox` finds runs in the store instead. A unit that writes no repository still works on a branch of the home repo, because it reads its parent's state there. *Made in M2, 17 Oct 2026.*
 - **D77. The ledger is read from the run store, after one pull.** The latest attempts, whether a run has started (D53), other runs' claims (D47), durations and the inbox's runs all come from the store. `status`, `next`, `apply` and `inbox` pull it first. Offline, they read the local copy with a warning. `record` pushes, and `apply` pushes what a record couldn't. *Made in M2, 17 Oct 2026.*
 - **D78. A command gate reads the attempt it judges at `{attempt}`,** the path of that attempt's entry in the local store. The gate's fact keeps `{attempt}`, because the path is this machine's and the ledger is everyone's. *Made in M2, 17 Oct 2026.*
+- **D79. A run's working files are store artifacts, and nothing is removed at a run's end.**
+  - An artifact of `kind: store` (with a `format`) never reaches a product repository. The step writes it in its outbox, `<home git dir>/fab0/out/<run>/<unit>-<attempt>/`, which the brief names. `record` checks it like any output and puts it into the run store as an object named by its hash.
+  - Its latest version is the output of the most recent attempt that wrote it and passed its checks: per element for a foreach unit, else the run's. There is one version per run, not one per branch.
+  - `keep` and `git.remove-run-artifacts` go, and with them reading a removed artifact from history. This replaces D38.
+  - Where each artifact lives is the factory's choice: a spec may be `kind: file` (kept in a repository) or `kind: store` (reviewed per run, and compacted later by a step of the factory's own).
+
+  *Made in M3a, 17 Oct 2026.*
+- **D80. A unit whose outputs are all in the store is reviewed in a pull request of the runs repository.**
+  - It applies to a step with a `human` gate decided by a pull request, whose outputs are all `kind: store`, and which writes no repository. `validate` asks for `store.github` for one. A human-gated step that writes a repository keeps its product pull request.
+  - `apply` puts the latest attempt's outputs in `runs/<project>/<run>/review/<unit>/` on the branch `fab0/<project>/<run>/<unit>`, one commit per attempt, and opens the pull request into the store's `main`. The branch is one per unit. Nothing is force-pushed, and the store's checkout never moves.
+  - The unit's own `pr` artifact is that pull request, so its reviews and people's comments feed the next attempt (D62, D72).
+  - The merge is the approval only when the person who merged is in the gate's owner role, and only for the latest attempt's outputs. A merge by anyone else is said on the pull request, and an owner's approving review there then passes the gate.
+  - A person's commit on the branch that changes the outputs is recorded as the next attempt, by that person (`executor: person`), and checked like any output.
+
+  *Made in M3b, 17 Oct 2026.*
