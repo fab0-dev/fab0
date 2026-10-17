@@ -1,6 +1,6 @@
 # Migration: the run store (fab0 0.6 → 0.7)
 
-**Status:** M6 and M7 in review. Next step: **M8**.
+**Status:** M8 done once fab0-dev/fab0-examples#12 is merged. Next step: **M9**, the first real run on 0.7.
 
 This guide governs the work on fab0 until 0.7 is released and has passed a real run. Sessions read it, do one step and edit it in the same pull request. It takes precedence over `ROADMAP.md` until step M9 is done, and it is removed then, as `REFACTOR.md` was. Git history keeps it.
 
@@ -308,7 +308,7 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   - Every page the step lists is updated, plus `step.md`, `commands.md`, `tracker.md` and `examples.md`, where they were stale.
   - `CONTRIBUTING.md` still describes the docs repository's own factory on 0.6. That factory moves in M8.
 
-- [ ] **M8. Release and cutover (every repository).**
+- [x] **M8. Release and cutover (every repository).**
   - fab0-core: release 0.7.0 (`plugin.json`, the marketplace entry, the tag `fab0--v0.7.0`). Tag the examples `story--v0.3.0` and `triage--v0.2.0`. Docs and examples CI go back to the release the marketplace points at.
   - Create `fab0-dev/fab0-runs` with the `fab0:github` skill.
   - fab0:
@@ -328,6 +328,17 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   - `validate` passes in both factories;
   - no `work/`, `specs/` or `briefs/` is left on any base branch;
   - `/fab0:inbox` runs clean.
+
+  *Result:*
+  - fab0 0.7.0 is released (fab0-dev/fab0-core#64) and tagged `fab0--v0.7.0`. The examples are tagged `story--v0.3.0` and `triage--v0.2.0`.
+  - fab0-dev/fab0#83 cuts fab0's factory over, fab0-dev/docs#29 the docs factory, and fab0-dev/fab0-examples#12 removes the last `work/` and puts the examples' CI back on the release. Docs CI is back on the release in #29.
+  - `fab0-dev/fab0-runs` is created with its ruleset: no deletion of `main`, no force push. It is **public**, not private: on the free plan GitHub refuses a ruleset on a private repository (D84).
+  - The plugin is updated to 0.7.0 in the fab0 and docs checkouts.
+  - Exit check:
+    - `fab0-resolve --version` gives `0.7.0` in a fresh session. A session started before the update keeps 0.6.5's `bin` first on its `PATH`, so a person restarts every open session.
+    - `validate` passes in both factories, and reaches `fab0-dev/fab0-runs` under `runs/fab0/` and `runs/docs/`.
+    - No `work/`, `specs/` or `briefs/` is left on the base branches of fab0, fab0-core and docs. fab0-examples follows once #12 is merged.
+    - `fab0-resolve inbox` runs clean in both factories: fab0's lists its three open Stories, ready to start, and no old run.
 
 - [ ] **M9. The first real run on 0.7 (fab0, and docs if a Docs issue is ready).**
   - A real Story runs with `/fab0:run` in a person's session.

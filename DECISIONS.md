@@ -214,3 +214,10 @@ Append only. To reverse a decision, add a new one that names the one it replaces
   - `/fab0:run` and `/fab0:inbox` describe the store: claims, review pull requests, and units another machine took.
 
   *Made in M5, 17 Oct 2026.*
+- **D84. A runs repository is private only where GitHub allows its ruleset there.**
+  - The ruleset (no force push, no deletion of `main`) keeps the store's history append-only, and it matters more than privacy. GitHub allows a ruleset on a private repository only on a paid plan.
+  - On a free plan, the runs repository is public. That exposes nothing new when the product repositories are public already, since 0.6 kept specs and ledgers in them.
+  - `fab0-dev/fab0-runs` is public for this reason. The `fab0:github` skill asks the person, and the docs and examples say so.
+  - This amends D83, which had the skill create it private.
+
+  *Made in M8, 17 Oct 2026.*
