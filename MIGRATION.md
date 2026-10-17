@@ -1,6 +1,6 @@
 # Migration: the run store (fab0 0.6 → 0.7)
 
-**Status:** M2 in review; its end-to-end check is still to run. Next step: **M3**.
+**Status:** M3a in review. M2's end-to-end check is still to run. Next step: **M3b**.
 
 This guide governs the work on fab0 until 0.7 is released and has passed a real run. Sessions read it, do one step and edit it in the same pull request. It takes precedence over `ROADMAP.md` until step M9 is done, and it is removed then, as `REFACTOR.md` was. Git history keeps it.
 
@@ -174,12 +174,24 @@ They are recorded in `DECISIONS.md` by the step that implements them.
 
   Decisions D75 to D78.
 
-- [ ] **M3. Store artifacts and review pull requests (fab0-core).**
-  - Store artifacts:
-    - `artifact.json` gets `kind: store` with a `format`.
-    - `keep` goes, and so does `git.remove-run-artifacts` (`catalogue.py`, `actions.py`, `apply.py`). `validate` refuses both, with a hint.
-    - The brief names the outbox. `record` verifies the outbox files against their schema and verifiers, and `put`s them. Any other file in the outbox is a finding.
-    - An artifact's latest version is the output of the most recent attempt that produced it and passed verification. Briefs inline it, and `foreach` reads its elements from it.
+- **M3. Store artifacts and review pull requests (fab0-core),** split in two.
+
+- [x] **M3a. Store artifacts.**
+  - `artifact.json` gets `kind: store` with a `format`.
+  - `keep` goes, and so does `git.remove-run-artifacts` (`catalogue.py`, `actions.py`, `apply.py`). `validate` refuses both, with a hint.
+  - The brief names the outbox. `record` verifies the outbox files against their schema and verifiers, and `put`s them. Any other file in the outbox is a finding.
+  - An artifact's latest version is the output of the most recent attempt that produced it and passed verification. Briefs inline it, and `foreach` reads its elements from it.
+
+  *Exit:* `foreach` fans out from a task-list object, the task list reaches no product repository, and a missing or extra outbox file is a finding.
+
+  *Result:* fab0-dev/fab0-core#60.
+  - `uv run pytest -q` passes: 381 passed and 1 xfailed. Ruff and the fixtures' `validate` pass too.
+  - `test_a_store_artifact_is_an_object_in_the_run_store_and_never_in_a_repository` covers the object, the fan-out and the home repo's history (spec, no task list).
+  - `test_the_outbox_holds_only_the_steps_outputs`, `test_a_version_that_failed_its_checks_is_never_the_latest` and `test_keep_and_the_removal_action_are_refused_with_a_hint` cover the rest.
+  - The fixtures' task lists are store artifacts. Their specs stay `kind: file` until M3b gives a store-only human gate a review surface.
+  - Found while doing it: a store artifact has one latest version per run, not one per branch. A new version is seen at once by every unit that reads it, wherever it works. Decision D79.
+
+- [ ] **M3b. Review pull requests.**
   - Review pull requests, as in the target model, including the owner check and a person's edits. A `pr` artifact of the unit resolves to its review pull request.
 
   *Exit:* in a fixture story run with the spec and the task list in the store:
@@ -187,7 +199,6 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   - a Comment review brings a new attempt with the review in its brief;
   - a merge by a non-owner is reported, and a merge by the owner passes the gate;
   - a person's edit on the branch is recorded as an attempt;
-  - `foreach` fans out from the task-list object;
   - the product repos receive only the implementation's changes.
 
 - [ ] **M4. No empty commits or pull requests (fab0-core).**
@@ -287,7 +298,7 @@ They are recorded in `DECISIONS.md` by the step that implements them.
 | M2 | No ledger branch: runs that write no files record in the store | D18, D20, D55's ledger-branch trace |
 | M2 | Claims across runs are read from the store | D47 in part |
 | M2 | Command gates receive the attempt fact | — |
-| M3 | `kind: store`; no `keep` and no `git.remove-run-artifacts` | D38 |
-| M3 | Review pull requests in the runs repository, the owner check, a person's edits | — |
+| M3a | `kind: store`; no `keep` and no `git.remove-run-artifacts` | D38 |
+| M3b | Review pull requests in the runs repository, the owner check, a person's edits | — |
 | M4 | A claim is a store fact; unit branches start without a commit | D46, D69 |
 | M4 | Run pull requests open only where the run changes something | D43's empty start commit |

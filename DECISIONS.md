@@ -179,3 +179,10 @@ Append only. To reverse a decision, add a new one that names the one it replaces
 - **D76. There is no ledger branch.** A run that writes no files records in the run store like any other, so `ledger.branch` and its `validate` rule go. This replaces D18, D20 and D55's ledger-branch trace: `inbox` finds runs in the store instead. A unit that writes no repository still works on a branch of the home repo, because it reads its parent's state there. *Made in M2, 17 Oct 2026.*
 - **D77. The ledger is read from the run store, after one pull.** The latest attempts, whether a run has started (D53), other runs' claims (D47), durations and the inbox's runs all come from the store. `status`, `next`, `apply` and `inbox` pull it first. Offline, they read the local copy with a warning. `record` pushes, and `apply` pushes what a record couldn't. *Made in M2, 17 Oct 2026.*
 - **D78. A command gate reads the attempt it judges at `{attempt}`,** the path of that attempt's entry in the local store. The gate's fact keeps `{attempt}`, because the path is this machine's and the ledger is everyone's. *Made in M2, 17 Oct 2026.*
+- **D79. A run's working files are store artifacts, and nothing is removed at a run's end.**
+  - An artifact of `kind: store` (with a `format`) never reaches a product repository. The step writes it in its outbox, `<home git dir>/fab0/out/<run>/<unit>-<attempt>/`, which the brief names. `record` checks it like any output and puts it into the run store as an object named by its hash.
+  - Its latest version is the output of the most recent attempt that wrote it and passed its checks: per element for a foreach unit, else the run's. There is one version per run, not one per branch.
+  - `keep` and `git.remove-run-artifacts` go, and with them reading a removed artifact from history. This replaces D38.
+  - Where each artifact lives is the factory's choice: a spec may be `kind: file` (kept in a repository) or `kind: store` (reviewed per run, and compacted later by a step of the factory's own).
+
+  *Made in M3a, 17 Oct 2026.*
