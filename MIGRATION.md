@@ -1,6 +1,6 @@
 # Migration: the run store (fab0 0.6 → 0.7)
 
-**Status:** M4 and M5 in review. Next step: **M6**.
+**Status:** M6 in review. Next step: **M7**.
 
 This guide governs the work on fab0 until 0.7 is released and has passed a real run. Sessions read it, do one step and edit it in the same pull request. It takes precedence over `ROADMAP.md` until step M9 is done, and it is removed then, as `REFACTOR.md` was. Git history keeps it.
 
@@ -257,7 +257,7 @@ They are recorded in `DECISIONS.md` by the step that implements them.
 
   Decision D83.
 
-- [ ] **M6. The examples (fab0-examples).**
+- [x] **M6. The examples (fab0-examples).**
   - `story`:
     - the spec and the task list become `kind: store`;
     - `onEnd: [git.sync-base, pr.ready]`;
@@ -268,6 +268,15 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   - CI checks against fab0-core's `main` until M8, as it did before 0.6.
 
   *Exit:* each example copied into an empty repository validates, and `scripts/check-agents.py` passes end to end.
+
+  *Result:* fab0-dev/fab0-examples#11. The examples are `story` 0.3.0 and `triage` 0.2.0, to be tagged in M8.
+  - `scripts/check-examples` copies each example into an empty repository and validates it: `PASS story`, `PASS triage`. It stands up the runs repository the wiring names in a local folder, since `validate` checks it can be reached.
+  - `scripts/check-agents.py` passes end to end: 13 checks out of 13, $0.82 over two sessions. The spec is reviewed in the runs repository and merged by its owner, and both tasks are reviewed and merged. The run branch's tests pass. The run's commits touch only code and tests, with no empty commit, and the ledger and the approved spec are in the runs repository.
+  - Found while doing it, now part of the step:
+    - The check's codebase had no `.gitignore`, so the `__pycache__` its tests leave counted as writes outside a task's claims, and `record` would have committed it. It now ignores them, as a project does.
+    - Its "only code and tests" check compared against the start's files, so it passed with an empty list. It now checks every file the run's commits touched. That version was checked against the kept run, not in a new run.
+    - `spec-author` starts a rework from the version the brief shows when its files aren't in place, and keeps a person's edits.
+    - The story README says how to keep the spec in a repository with `kind: file`. The task list then isn't in the spec's pull request.
 
 - [ ] **M7. The docs (docs).**
   - Reference:
