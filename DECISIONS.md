@@ -162,3 +162,10 @@ Append only. To reverse a decision, add a new one that names the one it replaces
 - **D71. Only a person merges into the base branch, unless the policy allows it, for every kind of merge.** That includes gate `none` and label-decided units under flat branching (0.6.1), and completes D68. *Made in R8, 15 Oct 2026.*
 - **D72. A person's conversation comments on a unit's pull request count as feedback, like Comment reviews.** fab0's own comments don't count, and comments stop counting once the unit is merged. This settles the R6 backlog item. It was delivered by fab0's own factory as Story fab0-dev/fab0#36, and released in 0.6.2. *Made in R8, 15 Oct 2026.*
 - **D73. The decision log moves to `DECISIONS.md`, and this guide is removed when R8 ends.** The engine cites decisions by number, so they need a lasting home. Git history keeps this guide. *Made in R8, 15 Oct 2026.*
+- **D74. What a run produces for itself goes into a run store, not into the product repositories.**
+  - One runs repository per product (`store.github`) serves every factory of the product, each under `runs/<project>/`. `project` defaults to the home repository's name on GitHub.
+  - A run's folder holds objects, immutable bytes named by their hash (`objects/sha256-<hex>.<ext>`), and facts, create-only YAML records (`ledger/<name>.yaml`). Writing a fact whose name exists answers `exists`, the store's only concurrency control.
+  - Only the engine calls the store: `put`, `get`, `append`, `facts`, `runs` and `sync`.
+  - The git backend commits each write in a clone the engine keeps in the home repo's git directory, or in `store.path`, under a lock for parallel writers. A push that loses a race fetches, puts its own files back on top of the remote and pushes again, at most three times. A fact another machine wrote first stands, and the writer is told.
+
+  *Made in M1, 17 Oct 2026.*
