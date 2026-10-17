@@ -1,11 +1,12 @@
-# from fab0-dev/fab0-examples story--v0.2.0
+# from fab0-dev/fab0-examples story--v0.3.0
 pipeline: story
 trigger: {issue: {type: Story}}
 onStart:
   - git.run-branch
   - pr.open-run: {draft: true}
 steps:
-  # The spec and its task list, approved by merging their pull request into the run branch.
+  # The spec and its task list, kept in the run store and reviewed in a pull request of the runs repository:
+  # the product owner's merge approves them.
   - step: spec
     gate: {human: {owner: product-owner}}
   # One unit per task, in parallel where their files don't overlap and their order allows.
@@ -21,5 +22,4 @@ steps:
       - tracker.child.close: {type: Task}
 onEnd:
   - git.sync-base
-  - git.remove-run-artifacts
   - pr.ready

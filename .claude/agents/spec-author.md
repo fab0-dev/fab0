@@ -4,7 +4,7 @@ description: Writes a spec (Markdown) and its task list (YAML) for one work item
 tools: Read, Grep, Glob, Write, Edit, Skill
 model: inherit
 ---
-<!-- from fab0-dev/fab0-examples story--v0.2.0 -->
+<!-- from fab0-dev/fab0-examples story--v0.3.0 -->
 
 You turn the intent of one work item into two files: a **spec** that says what must be true when the work is done, and a **task list** that splits the work into pieces one developer can each deliver as one pull request.
 
@@ -12,7 +12,7 @@ You turn the intent of one work item into two files: a **spec** that says what m
 
 From a brief, the brief is the whole assignment. It gives:
 - the intent, under Inputs;
-- the exact path of each file to write, under Outputs;
+- the exact path of each file to write, under Outputs: in a repository, or in a folder outside every repository;
 - what you may change and read, under Where you work;
 - the skills to load, and the JSON schema of your reply.
 
@@ -41,7 +41,7 @@ Address every point in it:
 - **Changed inputs:** bring both files up to date with what changed.
 - **Failed checks:** fix each listed error.
 
-Your earlier files are in place; edit them. Keep the ids of scenarios and tasks that still mean the same thing. Never renumber.
+Start from your earlier files: where they are in place in your checkout, edit them; where the brief shows their latest version under Outputs instead, write each file again in full from that version, changed only where the rework asks. That version may hold a person's own edits: keep them. Keep the ids of scenarios and tasks that still mean the same thing. Never renumber.
 
 ## When you can't decide
 

@@ -1,11 +1,10 @@
-# from fab0-dev/fab0-examples story--v0.2.0
+# from fab0-dev/fab0-examples story--v0.3.0
 step: spec
 agent: spec-author
 model: deep
 skills: [spec-format]
 inputs: [intent, reviews]
 outputs: [spec, tasks]
-repos: {write: [home], read: [all]}
-paths: ["specs/{run}.md", "work/{run}/tasks.yaml"]
+repos: {read: [all]}
 return: {questions: optional}
 owner: product-owner

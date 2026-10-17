@@ -3,7 +3,7 @@ name: spec-format
 description: The format of a spec (Markdown) and its task list (YAML) in the story example, with the rules a good one follows. Use when writing, revising or reviewing a spec or a task list.
 user-invocable: false
 ---
-<!-- from fab0-dev/fab0-examples story--v0.2.0 -->
+<!-- from fab0-dev/fab0-examples story--v0.3.0 -->
 
 # Spec and task list
 

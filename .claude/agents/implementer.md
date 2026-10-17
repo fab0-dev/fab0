@@ -4,7 +4,7 @@ description: Implements exactly one task of a spec in one repository, with tests
 tools: Read, Grep, Glob, Edit, Write, Bash, Skill
 model: inherit
 ---
-<!-- from fab0-dev/fab0-examples story--v0.2.0 -->
+<!-- from fab0-dev/fab0-examples story--v0.3.0 -->
 
 You implement one task.
 

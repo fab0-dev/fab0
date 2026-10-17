@@ -12,7 +12,7 @@
 | See what comes next | [`ROADMAP.md`](ROADMAP.md) |
 | Understand why fab0 is built as it is | [`DECISIONS.md`](DECISIONS.md) |
 | Propose a change to fab0 | [An issue in this repo](https://github.com/fab0-dev/fab0/issues) |
-| Watch fab0 build itself | [This repo's pull requests](https://github.com/fab0-dev/fab0/pulls), [`specs/`](specs) and `work/` |
+| Watch fab0 build itself | [This repo's issues](https://github.com/fab0-dev/fab0/issues), and each run's spec, review and ledger in [`fab0-dev/fab0-runs`](https://github.com/fab0-dev/fab0-runs) |
 
 ## What fab0 is
 
@@ -20,13 +20,13 @@ fab0 is a toolkit for building and operating software factories. A factory is on
 
 - **Building blocks, not a factory.** fab0 holds only what runs, checks and connects pipelines. Agents, skills, artifact formats and processes belong to the factory.
 - **The project carries the wiring.** Pipelines, steps, gates and artifacts are short files in the project's `.fab0/` directory. Agents and skills are ordinary Claude Code agents, skills and plugins, and need no fab0 conventions.
-- **A script routes, not the model.** A deterministic engine picks the next steps from the pipeline, the ledger in git and the facts in the tracker.
+- **A script routes, not the model.** A deterministic engine picks the next steps from the pipeline, the ledger in the run store and the facts in the tracker.
 - **Agents do the work the gates allow.** Every transition is a gate: none, automatic or human. A run works on its own branch, with sub-branches for parallel steps, and the dependencies it declares or the tracker carries decide what can run at once.
-- **Each fact has one home.** Git holds content and delivery. The tracker holds human decisions. A board only shows the state.
+- **Each fact has one home.** The product's repositories hold only the product. What a run produces for itself, its ledger and working files, goes into a run store, one runs repository per product. The tracker holds human decisions. A board only shows the state.
 
 ## Status
 
-fab0 0.6 is the toolkit, rebuilt from the 0.5 delivery factory that had its own agents built in. fab0 builds itself with it: fab0's own factory and the docs factory have each delivered real runs end to end. The [docs](https://github.com/fab0-dev/docs/blob/main/docs/index.md) describe 0.6, and the [`story` and `triage` examples](https://github.com/fab0-dev/fab0-examples) are ready to copy. Next comes use beyond fab0: first projects other than fab0, headless runs and teams, as laid out in the [roadmap](ROADMAP.md).
+fab0 0.7 keeps what a run produces for itself in a run store, so the product repositories receive only product changes. 0.6 rebuilt fab0 as a toolkit from the 0.5 delivery factory, and fab0 builds itself with it: fab0's own factory and the docs factory have each delivered real runs end to end. The [docs](https://github.com/fab0-dev/docs/blob/main/docs/index.md) describe 0.7, and the [`story` and `triage` examples](https://github.com/fab0-dev/fab0-examples) are ready to copy. Next comes use beyond fab0: first projects other than fab0, headless runs and teams, as laid out in the [roadmap](ROADMAP.md).
 
 ## What this repo is for
 
@@ -38,8 +38,8 @@ fab0 is built with a factory made from fab0, and this repo is where that factory
 | `CLAUDE.md` | The working rules and principles, for the people and agents working on fab0 |
 | `.fab0/` | fab0's own factory, copied from the `story` example: pipelines, steps, artifacts and schemas |
 | `.claude/` | The factory's agents, its `spec-format` skill, the merge guard and the settings |
-| `specs/<run>.md` | The spec each run wrote |
-| `work/<run>/ledger/` | Each run's ledger: what ran, when, and with what result |
+
+What its runs produce for themselves isn't here: each run's spec, task list, review pull request and ledger are in the runs repository [`fab0-dev/fab0-runs`](https://github.com/fab0-dev/fab0-runs), under `runs/fab0/<run>/`. The docs factory keeps its runs there too, under `runs/docs/`.
 
 The product is spread over four repositories:
 
@@ -53,11 +53,11 @@ The product is spread over four repositories:
 ### How a change to fab0 is made
 
 1. A change starts as a **Story** issue in this repo.
-2. A maintainer runs it with `/fab0:run <issue>`. The `spec-author` agent writes `specs/<run>.md` and a task list, and the product owner reviews that pull request.
+2. A maintainer runs it with `/fab0:run <issue>`. The `spec-author` agent writes a spec and a task list, and the product owner reviews them in a pull request of `fab0-dev/fab0-runs`, and merges it to approve them.
 3. Each task becomes a sub-issue, is implemented by the `implementer` agent in its own repository, reviewed by the `reviewer` agent, and merged into that repository's run branch. Tasks that change behaviour include the docs change.
 4. When the run ends, a person merges each repository's run pull request into `main`.
 
-So a pull request here usually carries a spec, a ledger or a change to the rules, and the matching code change is a pull request in `fab0-core`, `fab0-examples` or `docs` from the same run.
+So a pull request here carries a change to the rules, the roadmap or the factory, and a run's code changes are pull requests in `fab0-core`, `fab0-examples` or `docs`.
 
 ## Using fab0
 
