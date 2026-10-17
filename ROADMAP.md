@@ -4,6 +4,8 @@ The steps that build fab0 from here, in the order set by risk rather than comple
 
 This file holds the steps and their checks. The work itself runs through fab0's own factory: each step becomes one or more Stories in this repository, and the board shows where each one is. Why fab0 is built the way it is lives in [DECISIONS.md](DECISIONS.md); how it works, in the [docs](https://github.com/fab0-dev/docs/blob/main/docs/index.md).
 
+**Now:** [`MIGRATION.md`](MIGRATION.md) comes first. It moves run content out of the product repos into a run store, which leads to 0.7. The steps below wait until it is done.
+
 ## Where fab0 is
 
 fab0 0.6 is a toolkit for building and operating software factories. It was rebuilt from the 0.5 delivery factory in steps R0 to R8, recorded in `REFACTOR.md`, which git history keeps (it was removed with fab0-dev/fab0#43's merge). The 0.5 roadmap, with steps A.1 to C.4, is at commit `931a406`.

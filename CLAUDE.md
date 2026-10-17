@@ -15,6 +15,10 @@ Code goes elsewhere:
 
 The checkouts are siblings under one parent directory: the factory's `repos` point at them.
 
+## Migration mode
+
+Until `MIGRATION.md` is done, it governs the work: fab0 moves run content out of the product repos into a run store, which breaks 0.6. Its steps are done by hand, one step per pull request, and `/fab0:run` isn't used until its step M9. The plugin stays at 0.6.5 until M8. The flow below applies again once the guide is removed.
+
 ## Working on fab0 with fab0
 
 A change to fab0 starts as an issue of type **Story** here, and runs with `/fab0:run <issue>` in a trusted Claude Code session, with the sibling checkouts in place and this checkout on `main`:
