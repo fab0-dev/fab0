@@ -1,6 +1,6 @@
 # Migration: the run store (fab0 0.6 → 0.7)
 
-**Status:** M6 in review. Next step: **M7**.
+**Status:** M6 and M7 in review. Next step: **M8**.
 
 This guide governs the work on fab0 until 0.7 is released and has passed a real run. Sessions read it, do one step and edit it in the same pull request. It takes precedence over `ROADMAP.md` until step M9 is done, and it is removed then, as `REFACTOR.md` was. Git history keeps it.
 
@@ -278,7 +278,7 @@ They are recorded in `DECISIONS.md` by the step that implements them.
     - `spec-author` starts a rework from the version the brief shows when its files aren't in place, and keeps a person's edits.
     - The story README says how to keep the spec in a repository with `kind: file`. The task list then isn't in the spec's pull request.
 
-- [ ] **M7. The docs (docs).**
+- [x] **M7. The docs (docs).**
   - Reference:
     - `project.md`: the `store` block;
     - `artifact.md`: `kind: store`, no `keep`;
@@ -300,6 +300,13 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   - `index.md` says the docs describe 0.7 ahead of its release. CI reads the schemas from fab0-core's `main` until M8.
 
   *Exit:* `scripts/check-reference.py`, the linters and the link check pass.
+
+  *Result:* fab0-dev/docs#28.
+  - Against fab0-core `main`, `scripts/check-reference.py` finds that every field of the 6 reference pages matches its schema. It found 6 problems before the change. It now also checks `ledger.md` against `claim.json`.
+  - `uvx pymarkdownlnt scan` and `uvx codespell` are clean.
+  - Links: lychee isn't installed locally, so a script checked every relative link and fragment, and all resolve. CI's offline lychee run is the check of record. The weekly full check will fail on one link into the story README until fab0-dev/fab0-examples#11 is merged.
+  - Every page the step lists is updated, plus `step.md`, `commands.md`, `tracker.md` and `examples.md`, where they were stale.
+  - `CONTRIBUTING.md` still describes the docs repository's own factory on 0.6. That factory moves in M8.
 
 - [ ] **M8. Release and cutover (every repository).**
   - fab0-core: release 0.7.0 (`plugin.json`, the marketplace entry, the tag `fab0--v0.7.0`). Tag the examples `story--v0.3.0` and `triage--v0.2.0`. Docs and examples CI go back to the release the marketplace points at.
