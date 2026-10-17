@@ -169,3 +169,13 @@ Append only. To reverse a decision, add a new one that names the one it replaces
   - The git backend commits each write in a clone the engine keeps in the home repo's git directory, or in `store.path`, under a lock for parallel writers. A push that loses a race fetches, puts its own files back on top of the remote and pushes again, at most three times. A fact another machine wrote first stands, and the writer is told.
 
   *Made in M1, 17 Oct 2026.*
+- **D75. `record` commits the unit's work, and a unit is done when its commits are in its parent.**
+  - `record` verifies the result and checks write scope, then commits what the unit changed in its checkout. It then appends the attempt to the run store with `heads`: per repository, the commit its branch is at, when the branch's content differs from its parent's at the hand-out. A refused record commits nothing, and the session no longer commits.
+  - A unit is done when its latest attempt's heads are in the branch it merges into, or when GitHub reports its pull request merged at those heads, which covers a person's squash merge. Whoever merges still decides.
+  - An attempt with no heads changed nothing, so nothing is merged: its gate is the decision, as on the ledger branch before.
+  - This replaces the part of D24 where `record` writes the entry in the unit's checkout, and the part of D34 where done means the entry is on the parent branch.
+
+  *Made in M2, 17 Oct 2026.*
+- **D76. There is no ledger branch.** A run that writes no files records in the run store like any other, so `ledger.branch` and its `validate` rule go. This replaces D18, D20 and D55's ledger-branch trace: `inbox` finds runs in the store instead. A unit that writes no repository still works on a branch of the home repo, because it reads its parent's state there. *Made in M2, 17 Oct 2026.*
+- **D77. The ledger is read from the run store, after one pull.** The latest attempts, whether a run has started (D53), other runs' claims (D47), durations and the inbox's runs all come from the store. `status`, `next`, `apply` and `inbox` pull it first. Offline, they read the local copy with a warning. `record` pushes, and `apply` pushes what a record couldn't. *Made in M2, 17 Oct 2026.*
+- **D78. A command gate reads the attempt it judges at `{attempt}`,** the path of that attempt's entry in the local store. The gate's fact keeps `{attempt}`, because the path is this machine's and the ledger is everyone's. *Made in M2, 17 Oct 2026.*
