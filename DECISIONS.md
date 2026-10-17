@@ -162,3 +162,20 @@ Append only. To reverse a decision, add a new one that names the one it replaces
 - **D71. Only a person merges into the base branch, unless the policy allows it, for every kind of merge.** That includes gate `none` and label-decided units under flat branching (0.6.1), and completes D68. *Made in R8, 15 Oct 2026.*
 - **D72. A person's conversation comments on a unit's pull request count as feedback, like Comment reviews.** fab0's own comments don't count, and comments stop counting once the unit is merged. This settles the R6 backlog item. It was delivered by fab0's own factory as Story fab0-dev/fab0#36, and released in 0.6.2. *Made in R8, 15 Oct 2026.*
 - **D73. The decision log moves to `DECISIONS.md`, and this guide is removed when R8 ends.** The engine cites decisions by number, so they need a lasting home. Git history keeps this guide. *Made in R8, 15 Oct 2026.*
+- **D74. What a run produces for itself goes into a run store, not into the product repositories.**
+  - One runs repository per product (`store.github`) serves every factory of the product, each under `runs/<project>/`. `project` defaults to the home repository's name on GitHub.
+  - A run's folder holds objects, immutable bytes named by their hash (`objects/sha256-<hex>.<ext>`), and facts, create-only YAML records (`ledger/<name>.yaml`). Writing a fact whose name exists answers `exists`, the store's only concurrency control.
+  - Only the engine calls the store: `put`, `get`, `append`, `facts`, `runs` and `sync`.
+  - The git backend commits each write in a clone the engine keeps in the home repo's git directory, or in `store.path`, under a lock for parallel writers. A push that loses a race fetches, puts its own files back on top of the remote and pushes again, at most three times. A fact another machine wrote first stands, and the writer is told.
+
+  *Made in M1, 17 Oct 2026.*
+- **D75. `record` commits the unit's work, and a unit is done when its commits are in its parent.**
+  - `record` verifies the result and checks write scope, then commits what the unit changed in its checkout. It then appends the attempt to the run store with `heads`: per repository, the commit its branch is at, when the branch's content differs from its parent's at the hand-out. A refused record commits nothing, and the session no longer commits.
+  - A unit is done when its latest attempt's heads are in the branch it merges into, or when GitHub reports its pull request merged at those heads, which covers a person's squash merge. Whoever merges still decides.
+  - An attempt with no heads changed nothing, so nothing is merged: its gate is the decision, as on the ledger branch before.
+  - This replaces the part of D24 where `record` writes the entry in the unit's checkout, and the part of D34 where done means the entry is on the parent branch.
+
+  *Made in M2, 17 Oct 2026.*
+- **D76. There is no ledger branch.** A run that writes no files records in the run store like any other, so `ledger.branch` and its `validate` rule go. This replaces D18, D20 and D55's ledger-branch trace: `inbox` finds runs in the store instead. A unit that writes no repository still works on a branch of the home repo, because it reads its parent's state there. *Made in M2, 17 Oct 2026.*
+- **D77. The ledger is read from the run store, after one pull.** The latest attempts, whether a run has started (D53), other runs' claims (D47), durations and the inbox's runs all come from the store. `status`, `next`, `apply` and `inbox` pull it first. Offline, they read the local copy with a warning. `record` pushes, and `apply` pushes what a record couldn't. *Made in M2, 17 Oct 2026.*
+- **D78. A command gate reads the attempt it judges at `{attempt}`,** the path of that attempt's entry in the local store. The gate's fact keeps `{attempt}`, because the path is this machine's and the ledger is everyone's. *Made in M2, 17 Oct 2026.*

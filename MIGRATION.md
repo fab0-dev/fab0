@@ -1,6 +1,6 @@
 # Migration: the run store (fab0 0.6 → 0.7)
 
-**Status:** M0 in review. Next step: **M1**.
+**Status:** M2 in review; its end-to-end check is still to run. Next step: **M3**.
 
 This guide governs the work on fab0 until 0.7 is released and has passed a real run. Sessions read it, do one step and edit it in the same pull request. It takes precedence over `ROADMAP.md` until step M9 is done, and it is removed then, as `REFACTOR.md` was. Git history keeps it.
 
@@ -47,7 +47,7 @@ An artifact type picks its home, and the engine predefines nothing. A factory th
 
 ### The store
 
-- **Configuration.** `fab0.yaml` gets `store: {github: <owner>/<repo>, project: <key>, path: <local repo>}`, which replaces `ledger: {path, branch}`. `project` defaults to the home repo's key, so several factories of one product share a runs repository without their run numbers colliding. `path` is optional, for tests and for people who want to browse. By default the engine keeps its own clone in `<home git dir>/fab0/store`.
+- **Configuration.** `fab0.yaml` gets `store: {github: <owner>/<repo>, project: <key>, path: <local repo>}`, which replaces `ledger: {path, branch}`. `project` defaults to the home repository's name on GitHub (`fab0-dev/docs` → `docs`), so several factories of one product share a runs repository without their run numbers colliding. `path` is optional, for tests and for people who want to browse. By default the engine keeps its own clone in `<home git dir>/fab0/store`.
 - **Layout** of the runs repository:
 
   ```text
@@ -64,7 +64,7 @@ An artifact type picks its home, and the engine predefines nothing. A factory th
 - **Interface** (`store.py`): `put`, `get`, `append` (`ok` or `exists`), `facts(run)`, `runs()`, `sync(pull)`, `sync(push)`, and `review(run, unit, files)`. Only the engine calls it. Agents read what the brief gives them and write to their outbox.
 - **The git backend.**
   - There is one pull before `next`, and one push after each `record` or claim.
-  - A push rejected as non-fast-forward is retried after `pull --rebase`, at most three times.
+  - A push rejected as non-fast-forward fetches, puts the local writes back on top of the remote and pushes again, at most three times. Nothing in the store changes or goes, so this replay conflicts only on a fact another machine wrote first: the remote's fact stands, and the writer is told.
   - A file lock serialises parallel records on one machine.
   - The runs repository's ruleset blocks force pushes and the deletion of `main`, so history stays append-only. It has no required-PR rule and no CI.
   - People push with their own credentials, so a commit's author is the actor.
@@ -123,19 +123,22 @@ They are recorded in `DECISIONS.md` by the step that implements them.
 
 ## Steps
 
-- [ ] **M0. This guide (fab0).** Add `MIGRATION.md`, the "Migration mode" section in `CLAUDE.md` and a pointer in `ROADMAP.md`.
+- [x] **M0. This guide (fab0).** Add `MIGRATION.md`, the "Migration mode" section in `CLAUDE.md` and a pointer in `ROADMAP.md`.
   *Exit:* the pull request is merged.
+  *Result:* fab0-dev/fab0#75, merged on 17 Oct 2026.
 
-- [ ] **M1. The store adapter (fab0-core).** Pull `main` first; the local checkout was behind.
-  - New `plugins/fab0/lib/fab0_engine/store.py`: the interface, and `GitStore` with the managed clone, the lock, create-only `append`, and push with rebase and retry.
-  - `schemas/project.json` and `wiring.py` accept the `store` block, still beside `ledger`. Nothing calls the store yet.
+- [x] **M1. The store adapter (fab0-core).** Pull `main` first; the local checkout was behind.
+  - New `plugins/fab0/lib/fab0_engine/store.py`: the interface, and `GitStore` with the managed clone, the lock, create-only `append`, and a push that replays onto the remote and retries.
+  - `schemas/project.json` accepts the `store` block, still beside `ledger`. The schema alone checks it, so `wiring.py` needed no change. Nothing calls the store yet.
   - New `tests/test_store.py`, on a bare origin with two clones.
 
   *Exit:* the tests show that:
   - `put` twice keeps one object;
   - a hash mismatch fails `get`;
   - two clones appending the same fact get `ok` and `exists`;
-  - a concurrent push rebases and succeeds.
+  - a concurrent push replays and succeeds.
+
+  *Result:* fab0-dev/fab0-core#58. `uv run pytest -q` passes: 372 passed and 1 xfailed (the xfail was already there). Ruff and the fixtures' `validate` pass too. `tests/test_store.py` covers each point of the exit check. It also shows that the loser of a fact race still pushes its other writes, that 8 threads writing into one clone lose nothing, that an empty remote takes the first push, and that two projects share one runs repository. Decision D74.
 
 - [ ] **M2. The ledger in the store (fab0-core).**
   - Writes:
@@ -158,6 +161,19 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   - triage runs with no ledger branch;
   - a squash-merged unit counts as done.
 
+  *Result so far:* fab0-dev/fab0-core#59.
+  - `uv run pytest -q` passes: 375 passed and 1 xfailed (the xfail was already there). Ruff and the fixtures' `validate` pass too.
+  - Three tests cover the exit check: `test_the_ledger_stays_out_of_the_product_repositories` (no ledger file on any branch, and no gate commit), `test_a_run_without_files_records_into_the_run_store` and `test_a_squash_merged_unit_is_done`.
+  - `scripts/e2e-triage.py` is updated but not run yet, because it costs tokens. The box is ticked once it passes.
+
+  Found while doing it, now part of the step:
+  - A unit that writes no repository, such as a command check, still works on a branch of the home repo, because it must read its parent's state. It just records no `heads`. M4 decides whether a detached checkout can replace that branch.
+  - `heads` counts a branch only when its content differs from the parent's at the hand-out, because every unit branch carries the empty claim commit until M4.
+  - A squash merge counts only when GitHub reports the pull request merged at the recorded head. A pull request merged at an older attempt doesn't make the newer one done.
+  - A command gate's fact keeps `{attempt}`, not the local path it ran with.
+
+  Decisions D75 to D78.
+
 - [ ] **M3. Store artifacts and review pull requests (fab0-core).**
   - Store artifacts:
     - `artifact.json` gets `kind: store` with a `format`.
@@ -175,7 +191,8 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   - the product repos receive only the implementation's changes.
 
 - [ ] **M4. No empty commits or pull requests (fab0-core).**
-  - Claims: a claim is a create-only claim fact, pushed before the hand-out. The unit branch is created from the parent head, and pushed by the first `record` or by `apply`.
+  - Claims: a claim is a create-only claim fact, pushed before the hand-out. The unit branch is created from the parent head, and pushed by the first `record` or by `apply`. With no claim commit, `heads` can go back to "the branch has commits its parent lacks" (M2).
+  - A unit that writes no repository: decide whether it reads its parent from a detached checkout instead of a branch (M2).
   - `git.run-branch` makes no commit. `pr.open-run` waits until the run branch is ahead of the base. Every run pull request closes the run's item.
 
   *Exit:*
