@@ -6,7 +6,7 @@ This is the home repo of the fab0 product. fab0 is a toolkit for building and op
 
 - the README, these rules, `ROADMAP.md` (the steps ahead, and their exit checks) and `DECISIONS.md` (why fab0 is built as it is; append only);
 - `.fab0/`: fab0's own factory, copied from the `story` example, and `.claude/`: its agents, its `spec-format` skill, the merge guard and the settings;
-- what its runs write: `specs/<run>.md`, and each run's ledger under `work/<run>/ledger/`.
+- nothing its runs produce for themselves: each run's spec, task list, review pull request and ledger are in the runs repository `fab0-dev/fab0-runs`, under `runs/fab0/<run>/` (the docs factory's under `runs/docs/`).
 
 Code goes elsewhere:
 - the engine, the schemas, the action catalogue, the tracker adapters and the skills fab0 itself needs go in `fab0-dev/fab0-core`;
@@ -17,13 +17,13 @@ The checkouts are siblings under one parent directory: the factory's `repos` poi
 
 ## Migration mode
 
-Until `MIGRATION.md` is done, it governs the work: fab0 moves run content out of the product repos into a run store, which breaks 0.6. Its steps are done by hand, one step per pull request, and `/fab0:run` isn't used until its step M9. The plugin stays at 0.6.5 until M8. The flow below applies again once the guide is removed.
+Until `MIGRATION.md` is done, it governs the work: fab0 moves run content out of the product repos into a run store, which breaks 0.6. Its steps are done by hand, one step per pull request, and `/fab0:run` isn't used until its step M9. The plugin is at 0.7 from M8. The flow below applies again once the guide is removed.
 
 ## Working on fab0 with fab0
 
 A change to fab0 starts as an issue of type **Story** here, and runs with `/fab0:run <issue>` in a trusted Claude Code session, with the sibling checkouts in place and this checkout on `main`:
 
-1. `spec-author` writes `specs/<run>.md` and the task list. The product owner reviews its pull request (a Comment review asks for changes) and merges it into the run branch.
+1. `spec-author` writes the spec and the task list, which the engine keeps in `fab0-dev/fab0-runs`. The product owner reviews them in their review pull request there (a Comment review asks for changes, and an edit on its branch counts as the owner's own version) and merges it to approve them.
 2. `apply` creates a Task sub-issue per task. Each task is implemented by `implementer` in its repository, reviewed by `reviewer`, and merged into that repository's run branch by `apply`. A task a gate hands over waits for a person.
 3. `onEnd` brings `main` in and marks each repository's run pull request ready. The product owner merges them into `main`.
 

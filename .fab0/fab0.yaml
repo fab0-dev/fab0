@@ -1,7 +1,7 @@
-# from fab0-dev/fab0-examples story--v0.2.0
+# from fab0-dev/fab0-examples story--v0.3.0
 # fab0's own factory, copied from the story example: a Story becomes a spec and tasks across the
-# fab0 repositories, each implemented by an agent, reviewed by another and merged into the run branch;
-# the product owner merges the run into main.
+# fab0 repositories, reviewed in fab0-dev/fab0-runs; each task is implemented by an agent, reviewed by another
+# and merged into the run branch; the product owner merges the run into main.
 schema: 2
 repos:
   home:     {path: ., github: fab0-dev/fab0, owner: product-owner}
@@ -22,7 +22,9 @@ git:
   branching: run
   auto_merge: {into: [run]}
 parallel: {max: 3, cross_run: warn}
-ledger: {path: "work/{run}/ledger"}
+# The runs repository, which fab0's factories share: this one keeps its runs under runs/fab0/, the docs
+# factory under runs/docs/.
+store: {github: fab0-dev/fab0-runs, project: fab0}
 models:
   claude-code: {deep: opus, balanced: sonnet, fast: haiku}
 profiles:
