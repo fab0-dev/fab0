@@ -1,0 +1,276 @@
+# Migration: the run store (fab0 0.6 → 0.7)
+
+**Status:** M0 in review. Next step: **M1**.
+
+This guide governs the work on fab0 until 0.7 is released and has passed a real run. Sessions read it, do one step and edit it in the same pull request. It takes precedence over `ROADMAP.md` until step M9 is done, and it is removed then, as `REFACTOR.md` was. Git history keeps it.
+
+## How to use this guide
+
+1. Read this file top to bottom before you change anything. `CLAUDE.md` still applies, except where its "Migration mode" section says otherwise.
+2. Take the first step in [Steps](#steps) whose box isn't ticked.
+3. Do the step by hand in an ordinary session. Nobody uses `/fab0:run` until M9. The plugin stays at the released 0.6.5 until M8.
+4. One step is one pull request in the repository it changes. A step too large for one PR is first split here into lettered sub-steps (M2a, M2b, …).
+5. In the same pull request:
+   - tick the step;
+   - write its exit check result under it: what was run and what it showed;
+   - append the decisions it made to `DECISIONS.md` ("Made in Mn"), naming any decision they replace.
+
+   When the step's PR is in another repository, open a small companion PR here with those edits, or include them in the next home-repo PR.
+6. If the work shows the target model is wrong, change [Target model](#target-model) in its own PR and say why.
+
+People merge every pull request during the migration.
+
+## Why
+
+fab0 0.6 keeps everything a run produces for itself on the branches of the product repos. Runs 36 to 55 show what that costs:
+
+- **Files.** 93 ledger files sit on the base branches of the four repos, and nothing ever removes them: `keep: run` covers only the task list. In `docs`, 43 of its 90 tracked files are ledger files.
+- **Pull requests.** Every run PR in this repo carried no product change: each one landed only `specs/<run>.md` and a ledger entry. A Story took about 8 PRs (run 55). Docs run 8 opened three empty run PRs in repos it never changed.
+- **Commits.** Each gate decision is a commit of its own. Each unit starts with an empty claim commit, and a run with an empty `start run` commit. The run ends with a commit that only removes the task list. A rework that changes no code is a commit with only a ledger file. Bringing the base into a run branch also brings in other runs' ledgers.
+- **Reading.** The engine reads run state from git branches in every repo: a unit is done when its ledger file is in its parent branch's tree, cross-run claims come from other runs' unit branches, and the inbox lists folders on a ledger branch.
+
+The fix: **a product repo receives only product changes.** What a run produces for itself goes into one runs repository per product, through a store interface that only the engine calls.
+
+## Target model
+
+### Where content lives
+
+| Content | Home | Gets there by |
+|---|---|---|
+| Code, tests, docs, and any artifact a factory declares `kind: file` | a product repo | the unit's pull request |
+| Artifacts a factory declares `kind: store` | the run store, as objects | `record` |
+| Attempts, gate decisions, claims: the ledger | the run store, as facts | `record`, `next` |
+| Intent, approvals, hierarchy, done | the tracker and GitHub | people, actions |
+| Brief, inbox, an artifact's latest version | computed | the engine |
+
+An artifact type picks its home, and the engine predefines nothing. A factory that wants a per-run spec reviewed and then compacted into durable specs declares the spec `kind: store` and adds a step that writes the durable file. One that wants the spec in a repo keeps `kind: file`.
+
+### The store
+
+- **Configuration.** `fab0.yaml` gets `store: {github: <owner>/<repo>, project: <key>, path: <local repo>}`, which replaces `ledger: {path, branch}`. `project` defaults to the home repo's key, so several factories of one product share a runs repository without their run numbers colliding. `path` is optional, for tests and for people who want to browse. By default the engine keeps its own clone in `<home git dir>/fab0/store`.
+- **Layout** of the runs repository:
+
+  ```text
+  runs/<project>/<run>/
+    ledger/<unit>-<n>.yaml          an attempt
+    ledger/<unit>-<n>-gate.yaml     a gate decision
+    ledger/<unit>-<n>-claim.yaml    a claim
+    objects/sha256-<hex>.<ext>      a store artifact
+    review/<unit>/<artifact>.<ext>  arrives only through a review pull request
+  ```
+
+- **Objects** are immutable and addressed by their hash. Writing the same content twice is a no-op, and a read fails if the content doesn't match its hash.
+- **Facts** are create-only. Writing a fact whose name exists answers `exists`. That is the store's only concurrency control.
+- **Interface** (`store.py`): `put`, `get`, `append` (`ok` or `exists`), `facts(run)`, `runs()`, `sync(pull)`, `sync(push)`, and `review(run, unit, files)`. Only the engine calls it. Agents read what the brief gives them and write to their outbox.
+- **The git backend.**
+  - There is one pull before `next`, and one push after each `record` or claim.
+  - A push rejected as non-fast-forward is retried after `pull --rebase`, at most three times.
+  - A file lock serialises parallel records on one machine.
+  - The runs repository's ruleset blocks force pushes and the deletion of `main`, so history stays append-only. It has no required-PR rule and no CI.
+  - People push with their own credentials, so a commit's author is the actor.
+  - No LFS until a run needs it. Other backends are reserved, not built (P8).
+
+### A unit's life
+
+1. **`next`** pulls the store and appends a claim fact for each unit it hands out, pushed before the hand-out. A claim refused with `exists` means another machine has the unit. Without a remote, the local fact is the claim. The unit branch is created from the parent head, with no commit.
+2. **The brief** names the unit's worktree and its outbox, `<home git dir>/fab0/out/<run>/<unit>-<n>/`. The agent writes product files in the worktree and store artifacts in the outbox.
+3. **`record`**, in order:
+   1. validates the return and the outbox files, and runs the verifiers;
+   2. checks write scope;
+   3. commits the product changes in each written worktree;
+   4. `put`s the objects, `append`s the attempt fact with `heads` (the commit in each repo), and pushes.
+
+   A refused record commits nothing. The session no longer commits.
+4. **Gates.** An agent gate or command gate is recorded as a gate fact, with no commit. A command gate receives the attempt fact as a file, `{attempt}`.
+5. **Done.**
+   - A unit with product changes is done when its latest attempt's heads are reachable from its parent branch, or when GitHub reports its pull request merged. The second case covers a person's squash merge.
+   - A unit without product changes is done when its gate passes: `none`, an `auto` approval, a label (D54), or a review pull request merged by an owner.
+
+### Review pull requests
+
+A unit with a `human` gate whose outputs are all in the store gets its pull request in the runs repository:
+
+- It is on branch `fab0/<project>/<run>/<unit>`, one per unit, not one per attempt. The branch adds readable copies of the outputs under `review/<unit>/`.
+- Each attempt adds a commit, so the pull request shows what changed since the last review.
+- Reviews and a person's conversation comments feed the next attempt, as for any unit (D62, D72).
+- The merge is the approval only if the person who merged holds the gate's owner role. Branch protection can't limit who merges one path, so the engine checks this. Otherwise it reports the merge and the gate doesn't pass.
+- Files a person changed on the branch before merging are recorded as an attempt by that person. A product owner can still edit a spec in its pull request.
+
+### Run pull requests
+
+- `git.run-branch` creates run branches with no commit.
+- `pr.open-run` opens a repository's run pull request only once its run branch is ahead of the base.
+- Each run pull request closes the run's item (`Closes <home>#<run>`). A run that changes nothing in the home repo has no run pull request there.
+
+### What goes
+
+- `keep`, `git.remove-run-artifacts`, and reading a removed artifact from history (D38).
+- `ledger.path`, `ledger.branch`, the ledger branch, and `publish_ledger`.
+- The ledger exclusion in gate briefs, and the ledger exemption in the write-scope check.
+- Empty claim and start commits, and run pull requests in repositories with no change.
+
+### Decisions already taken
+
+They are recorded in `DECISIONS.md` by the step that implements them.
+
+- fab0's own factory keeps the spec and the task list in the store. Spec compaction comes later, as a roadmap item.
+- One runs repository for fab0, `fab0-dev/fab0-runs`, shared by the home and docs factories through `store.project`.
+- Ledger files from past runs are deleted at cutover, not imported. Git history keeps them.
+- 0.7 also removes empty commits and empty pull requests.
+- A person's conversation comments keep counting as feedback (D72).
+- Questions stay in the attempt fact. No separate message facts until a run needs them (P8).
+- The word "ledger" stays, for the facts of a run in the store.
+
+## Steps
+
+- [ ] **M0. This guide (fab0).** Add `MIGRATION.md`, the "Migration mode" section in `CLAUDE.md` and a pointer in `ROADMAP.md`.
+  *Exit:* the pull request is merged.
+
+- [ ] **M1. The store adapter (fab0-core).** Pull `main` first; the local checkout was behind.
+  - New `plugins/fab0/lib/fab0_engine/store.py`: the interface, and `GitStore` with the managed clone, the lock, create-only `append`, and push with rebase and retry.
+  - `schemas/project.json` and `wiring.py` accept the `store` block, still beside `ledger`. Nothing calls the store yet.
+  - New `tests/test_store.py`, on a bare origin with two clones.
+
+  *Exit:* the tests show that:
+  - `put` twice keeps one object;
+  - a hash mismatch fails `get`;
+  - two clones appending the same fact get `ok` and `exists`;
+  - a concurrent push rebases and succeeds.
+
+- [ ] **M2. The ledger in the store (fab0-core).**
+  - Writes:
+    - `handout.record` and `gates.record_gate` append facts.
+    - `record` commits the product changes and records `heads`.
+    - `ledger-entry.json` gets `heads`, and keeps no absolute local paths.
+  - Reads: the store replaces the branch reads in `schedule.py` (`sources`, `load_latest`, `recorded`, `other_claims`, `on_branch` and `status`) and in `inbox.candidates`. The inbox's traces become runs in the store, run branches, and items that match a trigger.
+  - Removed:
+    - `ledger` from `project.json`; `validate` refuses it, saying to use `store`;
+    - the ledger branch and its `validate` rule;
+    - `publish_ledger` and `ledger_repo`;
+    - the gate-brief exclusion and the write-scope exemption.
+  - Command gates get `{attempt}`.
+  - `skills/run/SKILL.md` drops its commit step.
+  - The test fixtures move off `work/`. The triage fixture loses its ledger branch.
+
+  *Exit:*
+  - the suite and `scripts/e2e-triage.py` pass;
+  - in a fixture story run, `git log --name-only` over every product branch shows no ledger file;
+  - triage runs with no ledger branch;
+  - a squash-merged unit counts as done.
+
+- [ ] **M3. Store artifacts and review pull requests (fab0-core).**
+  - Store artifacts:
+    - `artifact.json` gets `kind: store` with a `format`.
+    - `keep` goes, and so does `git.remove-run-artifacts` (`catalogue.py`, `actions.py`, `apply.py`). `validate` refuses both, with a hint.
+    - The brief names the outbox. `record` verifies the outbox files against their schema and verifiers, and `put`s them. Any other file in the outbox is a finding.
+    - An artifact's latest version is the output of the most recent attempt that produced it and passed verification. Briefs inline it, and `foreach` reads its elements from it.
+  - Review pull requests, as in the target model, including the owner check and a person's edits. A `pr` artifact of the unit resolves to its review pull request.
+
+  *Exit:* in a fixture story run with the spec and the task list in the store:
+  - a review pull request opens in the runs fixture;
+  - a Comment review brings a new attempt with the review in its brief;
+  - a merge by a non-owner is reported, and a merge by the owner passes the gate;
+  - a person's edit on the branch is recorded as an attempt;
+  - `foreach` fans out from the task-list object;
+  - the product repos receive only the implementation's changes.
+
+- [ ] **M4. No empty commits or pull requests (fab0-core).**
+  - Claims: a claim is a create-only claim fact, pushed before the hand-out. The unit branch is created from the parent head, and pushed by the first `record` or by `apply`.
+  - `git.run-branch` makes no commit. `pr.open-run` waits until the run branch is ahead of the base. Every run pull request closes the run's item.
+
+  *Exit:*
+  - in a fixture run that reads one repository without writing it, no product repository has an empty commit, and the read-only one gets no pull request;
+  - two clones racing for one unit give one hand-out.
+
+- [ ] **M5. Skills and setup (fab0-core).**
+  - `/fab0:run` and `/fab0:inbox` follow the store.
+  - The `fab0:github` skill checks the runs repository and creates it on request: private, the ruleset, write access for the project's people.
+  - `validate` checks that the store is reachable.
+
+  *Exit:* `validate` passes on every fixture, and `scripts/e2e-triage.py` passes.
+
+- [ ] **M6. The examples (fab0-examples).**
+  - `story`:
+    - the spec and the task list become `kind: store`;
+    - `onEnd: [git.sync-base, pr.ready]`;
+    - the `store` block replaces `ledger`;
+    - the agents write where the brief says;
+    - the README's setup adds the runs repository and its ruleset, and shows how to keep the spec in a repo with `kind: file`.
+  - `triage`: no ledger branch, and `.fab0/checks/classification.py` reads `{attempt}`.
+  - CI checks against fab0-core's `main` until M8, as it did before 0.6.
+
+  *Exit:* each example copied into an empty repository validates, and `scripts/check-agents.py` passes end to end.
+
+- [ ] **M7. The docs (docs).**
+  - Reference:
+    - `project.md`: the `store` block;
+    - `artifact.md`: `kind: store`, no `keep`;
+    - `ledger.md`: where facts live, `heads`, claim facts;
+    - `actions.md`.
+  - Explanation:
+    - `artifacts-and-ledger.md`;
+    - `branching.md`: no "Runs that write no files"; claims;
+    - `execution.md`: the loop and the inbox;
+    - `dependencies.md`;
+    - `gates.md`: review pull requests;
+    - `pipelines.md`;
+    - the glossary in `overview.md`: run store, runs repository.
+  - How-to:
+    - `use-an-example.md`;
+    - `github-setup.md`: a section on the runs repository;
+    - `choose-git-workflow.md`: no ledger branch;
+    - `build-your-first-factory.md`.
+  - `index.md` says the docs describe 0.7 ahead of its release. CI reads the schemas from fab0-core's `main` until M8.
+
+  *Exit:* `scripts/check-reference.py`, the linters and the link check pass.
+
+- [ ] **M8. Release and cutover (every repository).**
+  - fab0-core: release 0.7.0 (`plugin.json`, the marketplace entry, the tag `fab0--v0.7.0`). Tag the examples `story--v0.3.0` and `triage--v0.2.0`. Docs and examples CI go back to the release the marketplace points at.
+  - Create `fab0-dev/fab0-runs` with the `fab0:github` skill.
+  - fab0:
+    - copy `.fab0/` again from `story--v0.3.0`, with `store: {github: fab0-dev/fab0-runs, project: fab0}`;
+    - remove `work/` and `specs/`;
+    - update "What this repo holds" in `README.md` and `CLAUDE.md`.
+  - docs:
+    - its factory gets `store: {github: fab0-dev/fab0-runs, project: docs}`;
+    - the brief and the task list become `kind: store`;
+    - remove `work/` and `briefs/`;
+    - update `CONTRIBUTING.md` and the `docs-style` skill.
+  - fab0-core and fab0-examples: remove `work/`.
+  - Update the plugin in the fab0 and docs checkouts.
+
+  *Exit:*
+  - `fab0-resolve --version` shows 0.7.0 in a fresh session;
+  - `validate` passes in both factories;
+  - no `work/`, `specs/` or `briefs/` is left on any base branch;
+  - `/fab0:inbox` runs clean.
+
+- [ ] **M9. The first real run on 0.7 (fab0, and docs if a Docs issue is ready).**
+  - A real Story runs with `/fab0:run` in a person's session.
+
+  *Exit:*
+  - over the run's pull requests, `git log --name-only` shows product files only;
+  - no product repository has an empty commit;
+  - no pull request lacks a product change;
+  - the spec's review pull request and the run's facts are in `fab0-runs` under `runs/fab0/<run>/`;
+  - `/fab0:inbox` finds the run from the store.
+
+  Record two numbers: process files in product repos (target 0), and pull requests per Story (run 55 took 8). Then:
+  - remove this guide and the "Migration mode" section;
+  - update `ROADMAP.md`, adding spec compaction as an item.
+
+  Fixes that runs find ship as 0.7.x patch releases (D70).
+
+## Decisions the steps record
+
+| Step | Decision | Replaces |
+|---|---|---|
+| M1 | The run store: one runs repository per product, its layout, immutable objects and create-only facts | — |
+| M2 | `record` commits; a unit is done when its heads are reached or GitHub reports it merged | D24, D34 in part |
+| M2 | No ledger branch: runs that write no files record in the store | D18, D20, D55's ledger-branch trace |
+| M2 | Claims across runs are read from the store | D47 in part |
+| M2 | Command gates receive the attempt fact | — |
+| M3 | `kind: store`; no `keep` and no `git.remove-run-artifacts` | D38 |
+| M3 | Review pull requests in the runs repository, the owner check, a person's edits | — |
+| M4 | A claim is a store fact; unit branches start without a commit | D46, D69 |
+| M4 | Run pull requests open only where the run changes something | D43's empty start commit |
