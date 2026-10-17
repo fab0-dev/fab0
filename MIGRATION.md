@@ -1,6 +1,6 @@
 # Migration: the run store (fab0 0.6 → 0.7)
 
-**Status:** M4 and M5 in review. Next step: **M6**.
+**Status:** M6 and M7 in review. Next step: **M8**.
 
 This guide governs the work on fab0 until 0.7 is released and has passed a real run. Sessions read it, do one step and edit it in the same pull request. It takes precedence over `ROADMAP.md` until step M9 is done, and it is removed then, as `REFACTOR.md` was. Git history keeps it.
 
@@ -257,7 +257,7 @@ They are recorded in `DECISIONS.md` by the step that implements them.
 
   Decision D83.
 
-- [ ] **M6. The examples (fab0-examples).**
+- [x] **M6. The examples (fab0-examples).**
   - `story`:
     - the spec and the task list become `kind: store`;
     - `onEnd: [git.sync-base, pr.ready]`;
@@ -269,7 +269,16 @@ They are recorded in `DECISIONS.md` by the step that implements them.
 
   *Exit:* each example copied into an empty repository validates, and `scripts/check-agents.py` passes end to end.
 
-- [ ] **M7. The docs (docs).**
+  *Result:* fab0-dev/fab0-examples#11. The examples are `story` 0.3.0 and `triage` 0.2.0, to be tagged in M8.
+  - `scripts/check-examples` copies each example into an empty repository and validates it: `PASS story`, `PASS triage`. It stands up the runs repository the wiring names in a local folder, since `validate` checks it can be reached.
+  - `scripts/check-agents.py` passes end to end: 13 checks out of 13, $0.82 over two sessions. The spec is reviewed in the runs repository and merged by its owner, and both tasks are reviewed and merged. The run branch's tests pass. The run's commits touch only code and tests, with no empty commit, and the ledger and the approved spec are in the runs repository.
+  - Found while doing it, now part of the step:
+    - The check's codebase had no `.gitignore`, so the `__pycache__` its tests leave counted as writes outside a task's claims, and `record` would have committed it. It now ignores them, as a project does.
+    - Its "only code and tests" check compared against the start's files, so it passed with an empty list. It now checks every file the run's commits touched. That version was checked against the kept run, not in a new run.
+    - `spec-author` starts a rework from the version the brief shows when its files aren't in place, and keeps a person's edits.
+    - The story README says how to keep the spec in a repository with `kind: file`. The task list then isn't in the spec's pull request.
+
+- [x] **M7. The docs (docs).**
   - Reference:
     - `project.md`: the `store` block;
     - `artifact.md`: `kind: store`, no `keep`;
@@ -291,6 +300,13 @@ They are recorded in `DECISIONS.md` by the step that implements them.
   - `index.md` says the docs describe 0.7 ahead of its release. CI reads the schemas from fab0-core's `main` until M8.
 
   *Exit:* `scripts/check-reference.py`, the linters and the link check pass.
+
+  *Result:* fab0-dev/docs#28.
+  - Against fab0-core `main`, `scripts/check-reference.py` finds that every field of the 6 reference pages matches its schema. It found 6 problems before the change. It now also checks `ledger.md` against `claim.json`.
+  - `uvx pymarkdownlnt scan` and `uvx codespell` are clean.
+  - Links: lychee isn't installed locally, so a script checked every relative link and fragment, and all resolve. CI's offline lychee run is the check of record. The weekly full check will fail on one link into the story README until fab0-dev/fab0-examples#11 is merged.
+  - Every page the step lists is updated, plus `step.md`, `commands.md`, `tracker.md` and `examples.md`, where they were stale.
+  - `CONTRIBUTING.md` still describes the docs repository's own factory on 0.6. That factory moves in M8.
 
 - [ ] **M8. Release and cutover (every repository).**
   - fab0-core: release 0.7.0 (`plugin.json`, the marketplace entry, the tag `fab0--v0.7.0`). Tag the examples `story--v0.3.0` and `triage--v0.2.0`. Docs and examples CI go back to the release the marketplace points at.
